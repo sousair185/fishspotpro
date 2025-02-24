@@ -1,7 +1,8 @@
 
 import { Suspense } from "react";
-import { Map } from "lucide-react";
+import { Map as MapIcon } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
+import Map from "../components/Map";
 
 const Index = () => {
   return (
@@ -19,11 +20,17 @@ const Index = () => {
         </header>
 
         <section className="px-6 animate-slide-up">
-          <div className="aspect-[4/3] w-full rounded-2xl bg-card/80 backdrop-blur-lg border border-border/50 shadow-lg flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <Map className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="text-sm">Mapa em desenvolvimento</p>
-            </div>
+          <div className="aspect-[4/3] w-full rounded-2xl bg-card/80 backdrop-blur-lg border border-border/50 shadow-lg">
+            <Suspense fallback={
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <MapIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm">Carregando mapa...</p>
+                </div>
+              </div>
+            }>
+              <Map />
+            </Suspense>
           </div>
 
           <div className="mt-8 space-y-4">
