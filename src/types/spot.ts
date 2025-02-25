@@ -8,6 +8,8 @@ export interface FishingSpot {
   species: string[];
   createdBy: string;
   createdAt: string;
+  images?: string[];
+  reactions?: any[];
 }
 
 // Dados iniciais para teste

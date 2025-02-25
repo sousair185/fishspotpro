@@ -104,11 +104,11 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
         })
       );
 
-      const newSpot = {
+      const newSpot: Omit<FishingSpot, 'id'> = {
         name,
         description,
         coordinates,
-        type: 'river', // Você pode adicionar um seletor para isso depois
+        type: 'river',
         species: selectedFish,
         createdBy: userId,
         createdAt: new Date().toISOString(),
