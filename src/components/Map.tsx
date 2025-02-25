@@ -65,29 +65,55 @@ const Map = () => {
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/outdoors-v12',
+      style: 'mapbox://styles/mapbox/satellite-streets-v12', // Mudando para um estilo que mostra satélite + ruas
       center: [-47.9292, -15.7801],
-      zoom: 4,
+      zoom: 5, // Aumentando o zoom inicial
+      maxZoom: 18, // Definindo zoom máximo para melhor visualização
+      minZoom: 3, // Definindo zoom mínimo
     });
 
     // Adicionar controles
     map.current.addControl(
       new mapboxgl.NavigationControl({
         visualizePitch: true,
+        showCompass: true,
       }),
       'top-right'
     );
 
-    map.current.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true,
-        showUserHeading: true
-      }),
-      'top-right'
-    );
+    // Configurar e adicionar controle de geolocalização
+    const geolocate = new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true,
+      showUserHeading: true,
+      showAccuracyCircle: true
+    });
+
+    map.current.addControl(geolocate, 'top-right');
+
+    // Ativar automaticamente a geolocalização quando o mapa carregar
+    map.current.on('load', () => {
+      geolocate.trigger();
+
+      // Adicionar camadas para melhor visualização de corpos d'água
+      map.current?.setFog({
+        'horizon-blend': 0.2,
+        'color': '#f8f8f8',
+        'high-color': '#add8e6',
+        'space-color': '#d8f2ff',
+        'star-intensity': 0.15
+      });
+
+      // Ajustar a iluminação do mapa
+      map.current?.setLight({
+        anchor: 'viewport',
+        color: 'white',
+        intensity: 0.4,
+        position: [1.5, 90, 80]
+      });
+    });
 
     // Adicionar marcadores para spots existentes
     spots.forEach(spot => {
