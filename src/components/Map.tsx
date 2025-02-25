@@ -1,14 +1,14 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from './ui/button';
 import { Plus } from 'lucide-react';
 import { FishingSpot, initialSpots } from '@/types/spot';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
+import SpotForm from './spots/SpotForm';
 
 mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbHRnbXgxbzQwMGtuMmltYTZqeGE4ZnNnIn0.Zmg_sPy9OGW7UPNG_WWGZQ';
 
@@ -37,10 +37,10 @@ const Map = () => {
   const [spots, setSpots] = useState<FishingSpot[]>(initialSpots);
   const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
   const [addingSpot, setAddingSpot] = useState(false);
+  const [selectedCoordinates, setSelectedCoordinates] = useState<[number, number] | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Carregar spots do Firestore
   useEffect(() => {
     const loadSpots = async () => {
       try {
@@ -59,20 +59,18 @@ const Map = () => {
     loadSpots();
   }, []);
 
-  // Inicializar mapa
   useEffect(() => {
     if (!mapContainer.current) return;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12', // Mudando para um estilo que mostra satélite + ruas
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
       center: [-47.9292, -15.7801],
-      zoom: 5, // Aumentando o zoom inicial
-      maxZoom: 18, // Definindo zoom máximo para melhor visualização
-      minZoom: 3, // Definindo zoom mínimo
+      zoom: 5,
+      maxZoom: 18,
+      minZoom: 3,
     });
 
-    // Adicionar controles
     map.current.addControl(
       new mapboxgl.NavigationControl({
         visualizePitch: true,
@@ -81,7 +79,6 @@ const Map = () => {
       'top-right'
     );
 
-    // Configurar e adicionar controle de geolocalização
     const geolocate = new mapboxgl.GeolocateControl({
       positionOptions: {
         enableHighAccuracy: true
@@ -93,11 +90,9 @@ const Map = () => {
 
     map.current.addControl(geolocate, 'top-right');
 
-    // Ativar automaticamente a geolocalização quando o mapa carregar
     map.current.on('load', () => {
       geolocate.trigger();
 
-      // Adicionar camadas para melhor visualização de corpos d'água
       map.current?.setFog({
         'horizon-blend': 0.2,
         'color': '#f8f8f8',
@@ -106,7 +101,6 @@ const Map = () => {
         'star-intensity': 0.15
       });
 
-      // Ajustar a iluminação do mapa
       map.current?.setLight({
         anchor: 'viewport',
         color: 'white',
@@ -115,7 +109,6 @@ const Map = () => {
       });
     });
 
-    // Adicionar marcadores para spots existentes
     spots.forEach(spot => {
       const el = document.createElement('div');
       el.className = 'marker';
@@ -136,13 +129,19 @@ const Map = () => {
         .addTo(map.current!);
     });
 
-    // Evento de clique no mapa para adicionar novo spot
     map.current.on('click', (e) => {
       if (!addingSpot) return;
+      if (!user) {
+        toast({
+          title: "Login necessário",
+          description: "Faça login para adicionar novos spots",
+          variant: "destructive"
+        });
+        return;
+      }
 
       const coordinates: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-      addNewSpot(coordinates);
-      setAddingSpot(false);
+      setSelectedCoordinates(coordinates);
     });
 
     return () => {
@@ -150,44 +149,10 @@ const Map = () => {
     };
   }, [spots, addingSpot]);
 
-  // Função para adicionar novo spot
-  const addNewSpot = async (coordinates: [number, number]) => {
-    if (!user) {
-      toast({
-        title: "Login necessário",
-        description: "Faça login para adicionar novos spots",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const newSpot: Omit<FishingSpot, 'id'> = {
-        name: "Novo Spot",
-        description: "Descrição do novo spot de pesca",
-        coordinates,
-        type: 'river',
-        species: ['Peixe'],
-        createdBy: user.uid,
-        createdAt: new Date().toISOString()
-      };
-
-      const spotsCollection = collection(db, 'spots');
-      const docRef = await addDoc(spotsCollection, newSpot);
-      
-      setSpots(prev => [...prev, { ...newSpot, id: docRef.id }]);
-      
-      toast({
-        title: "Spot adicionado!",
-        description: "Novo ponto de pesca adicionado com sucesso."
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao adicionar spot",
-        description: "Tente novamente mais tarde",
-        variant: "destructive"
-      });
-    }
+  const handleSpotAdded = (newSpot: FishingSpot) => {
+    setSpots(prev => [...prev, newSpot]);
+    setAddingSpot(false);
+    setSelectedCoordinates(null);
   };
 
   return (
@@ -201,9 +166,22 @@ const Map = () => {
           className="shadow-lg"
         >
           {addingSpot ? "Cancelar" : <Plus className="mr-2" />}
-          {addingSpot ? "Adicionando..." : "Adicionar Spot"}
+          {addingSpot ? "Clique no mapa para adicionar" : "Adicionar Spot"}
         </Button>
       </div>
+
+      {selectedCoordinates && user && (
+        <SpotForm
+          isOpen={true}
+          onClose={() => {
+            setSelectedCoordinates(null);
+            setAddingSpot(false);
+          }}
+          coordinates={selectedCoordinates}
+          onSpotAdded={handleSpotAdded}
+          userId={user.uid}
+        />
+      )}
     </div>
   );
 };
