@@ -45,13 +45,12 @@ const Map = () => {
     queryFn: async () => {
       const spotsCollection = collection(db, 'spots');
       const spotsSnapshot = await getDocs(spotsCollection);
-      return spotsSnapshot.docs.map(doc => ({ 
+      const spotsData = spotsSnapshot.docs.map(doc => ({ 
         id: doc.id, 
         ...doc.data() 
       })) as FishingSpot[];
-    },
-    onSuccess: (data) => {
-      setSpots([...initialSpots, ...data]);
+      setSpots([...initialSpots, ...spotsData]);
+      return spotsData;
     }
   });
 
