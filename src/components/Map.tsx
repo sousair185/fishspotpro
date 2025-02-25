@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from './ui/button';
-import { Plus, Fish } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { FishingSpot, initialSpots } from '@/types/spot';
 import { useToast } from './ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +11,25 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 
 mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbHRnbXgxbzQwMGtuMmltYTZqeGE4ZnNnIn0.Zmg_sPy9OGW7UPNG_WWGZQ';
+
+// Styles moved to index.css
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  .marker {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    color: hsl(var(--primary));
+  }
+  .marker:hover {
+    color: hsl(var(--primary) / 0.8);
+  }
+  .mapboxgl-popup-content {
+    padding: 0;
+    border-radius: 8px;
+  }
+`;
+document.head.appendChild(styleSheet);
 
 const Map = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -159,22 +178,6 @@ const Map = () => {
           {addingSpot ? "Adicionando..." : "Adicionar Spot"}
         </Button>
       </div>
-      
-      <style jsx global>{`
-        .marker {
-          cursor: pointer;
-          width: 24px;
-          height: 24px;
-          color: hsl(var(--primary));
-        }
-        .marker:hover {
-          color: hsl(var(--primary) / 0.8);
-        }
-        .mapboxgl-popup-content {
-          padding: 0;
-          border-radius: 8px;
-        }
-      `}</style>
     </div>
   );
 };
