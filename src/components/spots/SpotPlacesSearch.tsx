@@ -10,7 +10,7 @@ interface SpotPlacesSearchProps {
 
 const SpotPlacesSearch = ({ onPlaceSelected }: SpotPlacesSearchProps) => {
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
     libraries: ['places'],
   });
 
