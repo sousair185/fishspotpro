@@ -1,6 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
+import React, { useState } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from './ui/button';
 import { Plus } from 'lucide-react';
@@ -10,8 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import SpotForm from './spots/SpotForm';
-
-mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbHRnbXgxbzQwMGtuMmltYTZqeGE4ZnNnIn0.Zmg_sPy9OGW7UPNG_WWGZQ';
+import { useMapbox } from '@/hooks/useMapbox';
+import { useQuery } from '@tanstack/react-query';
 
 // Styles moved to index.css
 const styleSheet = document.createElement('style');
@@ -33,8 +32,6 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 const Map = () => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
   const [spots, setSpots] = useState<FishingSpot[]>(initialSpots);
   const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
   const [addingSpot, setAddingSpot] = useState(false);
@@ -42,96 +39,28 @@ const Map = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  useEffect(() => {
-    const loadSpots = async () => {
-      try {
-        const spotsCollection = collection(db, 'spots');
-        const spotsSnapshot = await getDocs(spotsCollection);
-        const spotsData = spotsSnapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
-        })) as FishingSpot[];
-        setSpots([...initialSpots, ...spotsData]);
-      } catch (error) {
-        console.error('Erro ao carregar spots:', error);
-      }
-    };
+  // Carregar spots usando React Query
+  const { data: fetchedSpots } = useQuery({
+    queryKey: ['spots'],
+    queryFn: async () => {
+      const spotsCollection = collection(db, 'spots');
+      const spotsSnapshot = await getDocs(spotsCollection);
+      return spotsSnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      })) as FishingSpot[];
+    },
+    onSuccess: (data) => {
+      setSpots([...initialSpots, ...data]);
+    }
+  });
 
-    loadSpots();
-  }, []);
-
-  useEffect(() => {
-    if (!mapContainer.current) return;
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: [-47.9292, -15.7801],
-      zoom: 5,
-      maxZoom: 18,
-      minZoom: 3,
-    });
-
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        visualizePitch: true,
-        showCompass: true,
-      }),
-      'top-right'
-    );
-
-    const geolocate = new mapboxgl.GeolocateControl({
-      positionOptions: {
-        enableHighAccuracy: true
-      },
-      trackUserLocation: true,
-      showUserHeading: true,
-      showAccuracyCircle: true
-    });
-
-    map.current.addControl(geolocate, 'top-right');
-
-    map.current.on('load', () => {
-      geolocate.trigger();
-
-      map.current?.setFog({
-        'horizon-blend': 0.2,
-        'color': '#f8f8f8',
-        'high-color': '#add8e6',
-        'space-color': '#d8f2ff',
-        'star-intensity': 0.15
-      });
-
-      map.current?.setLight({
-        anchor: 'viewport',
-        color: 'white',
-        intensity: 0.4,
-        position: [1.5, 90, 80]
-      });
-    });
-
-    spots.forEach(spot => {
-      const el = document.createElement('div');
-      el.className = 'marker';
-      el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 2a8 8 0 0 0-8 8c0 1.892.402 3.13 1.5 4.5L12 22l6.5-7.5c1.098-1.37 1.5-2.608 1.5-4.5a8 8 0 0 0-8-8z"/><path d="M12 13V7"/><path d="M15 10h-6"/></svg>`;
-
-      const popup = new mapboxgl.Popup({ offset: 25 })
-        .setHTML(`
-          <div class="p-2">
-            <h3 class="font-bold">${spot.name}</h3>
-            <p class="text-sm">${spot.description}</p>
-            <p class="text-xs mt-1">Espécies: ${spot.species.join(', ')}</p>
-          </div>
-        `);
-
-      new mapboxgl.Marker(el)
-        .setLngLat(spot.coordinates)
-        .setPopup(popup)
-        .addTo(map.current!);
-    });
-
-    map.current.on('click', (e) => {
-      if (!addingSpot) return;
+  const { mapContainer } = useMapbox({
+    initialCenter: [-47.9292, -15.7801],
+    initialZoom: 5,
+    spots,
+    onSpotClick: setSelectedSpot,
+    onMapClick: (coordinates) => {
       if (!user) {
         toast({
           title: "Login necessário",
@@ -140,15 +69,10 @@ const Map = () => {
         });
         return;
       }
-
-      const coordinates: [number, number] = [e.lngLat.lng, e.lngLat.lat];
       setSelectedCoordinates(coordinates);
-    });
-
-    return () => {
-      map.current?.remove();
-    };
-  }, [spots, addingSpot]);
+    },
+    isAddingMode: addingSpot
+  });
 
   const handleSpotAdded = (newSpot: FishingSpot) => {
     setSpots(prev => [...prev, newSpot]);
