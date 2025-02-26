@@ -11,6 +11,7 @@ interface UseGoogleMapsProps {
   onSpotClick?: (spot: FishingSpot) => void;
   onMapClick?: (coordinates: [number, number]) => void;
   isAddingMode?: boolean;
+  onCenterChanged?: (center: { lat: number; lng: number }) => void;
 }
 
 export const useGoogleMaps = ({
@@ -19,7 +20,8 @@ export const useGoogleMaps = ({
   spots,
   onSpotClick,
   onMapClick,
-  isAddingMode
+  isAddingMode,
+  onCenterChanged
 }: UseGoogleMapsProps) => {
   const mapRef = useRef<google.maps.Map | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
@@ -47,6 +49,7 @@ export const useGoogleMaps = ({
           if (mapRef.current) {
             mapRef.current.panTo(userLocation);
             mapRef.current.setZoom(14);
+            onCenterChanged?.(userLocation);
 
             // Encontrar spots próximos (num raio de aproximadamente 10km)
             const nearbySpots = spots.filter(spot => {
@@ -87,7 +90,7 @@ export const useGoogleMaps = ({
         variant: "destructive"
       });
     }
-  }, [spots, toast]);
+  }, [spots, toast, onCenterChanged]);
 
   return {
     onLoad,

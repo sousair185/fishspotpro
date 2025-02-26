@@ -18,16 +18,20 @@ const mapContainerStyle = {
   borderRadius: '1rem'
 };
 
+// Coordenadas padrão (só serão usadas se não conseguirmos a localização do usuário)
+const defaultCenter = { lat: -15.7801, lng: -47.9292 };
+
 const Map = () => {
   const [spots, setSpots] = useState<FishingSpot[]>(initialSpots);
   const [addingSpot, setAddingSpot] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState<[number, number] | null>(null);
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
   const { toast } = useToast();
   const { user } = useAuth();
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
-    libraries: ['places']
+    libraries: ['places', 'geometry']
   });
 
   const { data: fetchedSpots } = useQuery({
@@ -58,8 +62,8 @@ const Map = () => {
     mapRef,
     centerOnUserLocation
   } = useGoogleMaps({
-    initialCenter: [-47.9292, -15.7801],
-    initialZoom: 12, // Zoom inicial mais aproximado
+    initialCenter: [mapCenter.lng, mapCenter.lat],
+    initialZoom: 12,
     spots,
     onSpotClick: (spot) => {
       setSelectedSpot(spot);
@@ -75,7 +79,10 @@ const Map = () => {
       }
       setSelectedCoordinates(coordinates);
     },
-    isAddingMode: addingSpot
+    isAddingMode: addingSpot,
+    onCenterChanged: (newCenter) => {
+      setMapCenter(newCenter);
+    }
   });
 
   const handleLocationClick = useCallback(() => {
@@ -100,11 +107,11 @@ const Map = () => {
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         zoom={12}
-        center={{ lat: -15.7801, lng: -47.9292 }}
+        center={mapCenter}
         onLoad={onLoad}
         onClick={handleMapClick}
         options={{
-          mapTypeId: 'roadmap', // Muda o tipo do mapa para roadmap (mapa normal)
+          mapTypeId: 'roadmap',
           zoomControl: true,
           streetViewControl: true,
           mapTypeControl: true,
