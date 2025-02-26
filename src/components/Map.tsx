@@ -44,16 +44,25 @@ const Map = () => {
     }
   });
 
+  const handleSpotAdded = (newSpot: FishingSpot) => {
+    setSpots(prev => [...prev, newSpot]);
+    setAddingSpot(false);
+    setSelectedCoordinates(null);
+  };
+
   const {
     onLoad,
     handleMapClick,
     selectedSpot,
-    setSelectedSpot
+    setSelectedSpot,
+    mapRef
   } = useGoogleMaps({
     initialCenter: [-47.9292, -15.7801],
     initialZoom: 5,
     spots,
-    onSpotClick: setSelectedSpot,
+    onSpotClick: (spot) => {
+      setSelectedSpot(spot);
+    },
     onMapClick: (coordinates) => {
       if (!user) {
         toast({
@@ -67,12 +76,6 @@ const Map = () => {
     },
     isAddingMode: addingSpot
   });
-
-  const handleSpotAdded = (newSpot: FishingSpot) => {
-    setSpots(prev => [...prev, newSpot]);
-    setAddingSpot(false);
-    setSelectedCoordinates(null);
-  };
 
   if (!isLoaded) return <div>Carregando mapa...</div>;
 
