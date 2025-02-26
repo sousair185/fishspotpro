@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api';
 import { Button } from './ui/button';
 import { Plus } from 'lucide-react';
 import { FishingSpot, initialSpots } from '@/types/spot';
@@ -9,37 +9,27 @@ import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import SpotForm from './spots/SpotForm';
-import { useMapbox } from '@/hooks/useMapbox';
+import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useQuery } from '@tanstack/react-query';
 
-// Styles moved to index.css
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  .marker {
-    cursor: pointer;
-    width: 24px;
-    height: 24px;
-    color: hsl(var(--primary));
-  }
-  .marker:hover {
-    color: hsl(var(--primary) / 0.8);
-  }
-  .mapboxgl-popup-content {
-    padding: 0;
-    border-radius: 8px;
-  }
-`;
-document.head.appendChild(styleSheet);
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%',
+  borderRadius: '1rem'
+};
 
 const Map = () => {
   const [spots, setSpots] = useState<FishingSpot[]>(initialSpots);
-  const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
   const [addingSpot, setAddingSpot] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState<[number, number] | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Carregar spots usando React Query
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
+    libraries: ['places']
+  });
+
   const { data: fetchedSpots } = useQuery({
     queryKey: ['spots'],
     queryFn: async () => {
@@ -54,7 +44,12 @@ const Map = () => {
     }
   });
 
-  const { mapContainer } = useMapbox({
+  const {
+    onLoad,
+    handleMapClick,
+    selectedSpot,
+    setSelectedSpot
+  } = useGoogleMaps({
     initialCenter: [-47.9292, -15.7801],
     initialZoom: 5,
     spots,
@@ -79,9 +74,58 @@ const Map = () => {
     setSelectedCoordinates(null);
   };
 
+  if (!isLoaded) return <div>Carregando mapa...</div>;
+
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden">
-      <div ref={mapContainer} className="absolute inset-0" />
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        zoom={5}
+        center={{ lat: -15.7801, lng: -47.9292 }}
+        onLoad={onLoad}
+        onClick={handleMapClick}
+        options={{
+          mapTypeId: 'hybrid',
+          zoomControl: true,
+          streetViewControl: true,
+          mapTypeControl: true,
+          scaleControl: true
+        }}
+      >
+        {spots.map((spot) => (
+          <Marker
+            key={spot.id}
+            position={{ lat: spot.coordinates[1], lng: spot.coordinates[0] }}
+            onClick={() => setSelectedSpot(spot)}
+          />
+        ))}
+
+        {selectedSpot && (
+          <InfoWindow
+            position={{ lat: selectedSpot.coordinates[1], lng: selectedSpot.coordinates[0] }}
+            onCloseClick={() => setSelectedSpot(null)}
+          >
+            <div className="p-2">
+              <h3 className="font-bold">{selectedSpot.name}</h3>
+              <p className="text-sm">{selectedSpot.description}</p>
+              <p className="text-xs mt-1">Espécies: {selectedSpot.species.join(', ')}</p>
+              {selectedSpot.images && (
+                <div className="mt-2 flex gap-2">
+                  {selectedSpot.images.map((url, index) => (
+                    <img
+                      key={index}
+                      src={url}
+                      alt="Foto do spot"
+                      className="w-20 h-20 object-cover rounded"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </InfoWindow>
+        )}
+      </GoogleMap>
+
       <div className="absolute bottom-4 left-4 z-10 space-y-2">
         <Button
           variant={addingSpot ? "secondary" : "default"}
