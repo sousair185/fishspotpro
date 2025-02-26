@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { FishingSpot } from '@/types/spot';
 
+// Configure o token do Mapbox
+mapboxgl.accessToken = 'pk.eyJ1IjoiZmlzaHNwb3QiLCJhIjoiY2x0eWExbms0MWphZDJrcnZ3eHc1Z2xoMyJ9.mL-OF7H6maGxtiJbEpLrfA';
+
 interface UseMapboxProps {
   initialCenter: [number, number];
   initialZoom: number;
