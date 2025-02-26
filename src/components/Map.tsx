@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api';
 import { Button } from './ui/button';
 import { Plus, Navigation } from 'lucide-react';
@@ -59,7 +59,7 @@ const Map = () => {
     centerOnUserLocation
   } = useGoogleMaps({
     initialCenter: [-47.9292, -15.7801],
-    initialZoom: 5,
+    initialZoom: 12, // Zoom inicial mais aproximado
     spots,
     onSpotClick: (spot) => {
       setSelectedSpot(spot);
@@ -86,18 +86,25 @@ const Map = () => {
     });
   }, [centerOnUserLocation, toast]);
 
+  // Buscar localização do usuário assim que o mapa carregar
+  useEffect(() => {
+    if (isLoaded) {
+      centerOnUserLocation();
+    }
+  }, [isLoaded, centerOnUserLocation]);
+
   if (!isLoaded) return <div>Carregando mapa...</div>;
 
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden">
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
-        zoom={5}
+        zoom={12}
         center={{ lat: -15.7801, lng: -47.9292 }}
         onLoad={onLoad}
         onClick={handleMapClick}
         options={{
-          mapTypeId: 'hybrid',
+          mapTypeId: 'roadmap', // Muda o tipo do mapa para roadmap (mapa normal)
           zoomControl: true,
           streetViewControl: true,
           mapTypeControl: true,
