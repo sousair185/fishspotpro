@@ -1,7 +1,8 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { FishingSpot } from '@/types/spot';
-import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap } from '@react-google-maps/api';
+import { useToast } from './use-toast';
 
 interface UseGoogleMapsProps {
   initialCenter: [number, number];
@@ -22,6 +23,7 @@ export const useGoogleMaps = ({
 }: UseGoogleMapsProps) => {
   const mapRef = useRef<google.maps.Map | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
+  const { toast } = useToast();
 
   const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -33,11 +35,66 @@ export const useGoogleMaps = ({
     onMapClick(coordinates);
   }, [isAddingMode, onMapClick]);
 
+  const centerOnUserLocation = useCallback(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+
+          if (mapRef.current) {
+            mapRef.current.panTo(userLocation);
+            mapRef.current.setZoom(14);
+
+            // Encontrar spots próximos (num raio de aproximadamente 10km)
+            const nearbySpots = spots.filter(spot => {
+              const spotLat = spot.coordinates[1];
+              const spotLng = spot.coordinates[0];
+              const distance = google.maps.geometry.spherical.computeDistanceBetween(
+                new google.maps.LatLng(userLocation.lat, userLocation.lng),
+                new google.maps.LatLng(spotLat, spotLng)
+              );
+              return distance <= 10000; // 10km em metros
+            });
+
+            if (nearbySpots.length > 0) {
+              toast({
+                title: "Spots encontrados!",
+                description: `${nearbySpots.length} spots de pesca próximos a você.`
+              });
+            } else {
+              toast({
+                title: "Nenhum spot próximo",
+                description: "Não encontramos spots de pesca num raio de 10km."
+              });
+            }
+          }
+        },
+        (error) => {
+          toast({
+            title: "Erro de localização",
+            description: "Não foi possível obter sua localização. Verifique as permissões do navegador.",
+            variant: "destructive"
+          });
+        }
+      );
+    } else {
+      toast({
+        title: "Geolocalização não suportada",
+        description: "Seu navegador não suporta geolocalização.",
+        variant: "destructive"
+      });
+    }
+  }, [spots, toast]);
+
   return {
     onLoad,
     handleMapClick,
     selectedSpot,
     setSelectedSpot,
-    mapRef
+    mapRef,
+    centerOnUserLocation
   };
 };

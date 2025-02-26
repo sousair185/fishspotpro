@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api';
 import { Button } from './ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Navigation } from 'lucide-react';
 import { FishingSpot, initialSpots } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -55,7 +55,8 @@ const Map = () => {
     handleMapClick,
     selectedSpot,
     setSelectedSpot,
-    mapRef
+    mapRef,
+    centerOnUserLocation
   } = useGoogleMaps({
     initialCenter: [-47.9292, -15.7801],
     initialZoom: 5,
@@ -76,6 +77,14 @@ const Map = () => {
     },
     isAddingMode: addingSpot
   });
+
+  const handleLocationClick = useCallback(() => {
+    centerOnUserLocation();
+    toast({
+      title: "Localizando",
+      description: "Buscando sua localização...",
+    });
+  }, [centerOnUserLocation, toast]);
 
   if (!isLoaded) return <div>Carregando mapa...</div>;
 
@@ -138,6 +147,17 @@ const Map = () => {
         >
           {addingSpot ? "Cancelar" : <Plus className="mr-2" />}
           {addingSpot ? "Clique no mapa para adicionar" : "Adicionar Spot"}
+        </Button>
+      </div>
+
+      <div className="absolute bottom-4 right-4 z-10">
+        <Button
+          variant="default"
+          size="icon"
+          onClick={handleLocationClick}
+          className="shadow-lg"
+        >
+          <Navigation className="h-4 w-4" />
         </Button>
       </div>
 
