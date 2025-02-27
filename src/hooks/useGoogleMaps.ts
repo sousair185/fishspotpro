@@ -26,7 +26,6 @@ export const useGoogleMaps = ({
   const mapRef = useRef<google.maps.Map | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
   const { toast } = useToast();
-  const hasNotifiedRef = useRef(false);
 
   const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -52,10 +51,7 @@ export const useGoogleMaps = ({
             mapRef.current.setZoom(14);
             onCenterChanged?.(userLocation);
 
-            // Reset a notificação quando o usuário busca explicitamente sua localização
-            hasNotifiedRef.current = false;
-
-            // Encontrar spots próximos (num raio de aproximadamente 10km)
+            // Encontrar spots próximos (num raio de aproximadamente 20km)
             const nearbySpots = spots.filter(spot => {
               const spotLat = spot.coordinates[1];
               const spotLng = spot.coordinates[0];
@@ -63,23 +59,20 @@ export const useGoogleMaps = ({
                 new google.maps.LatLng(userLocation.lat, userLocation.lng),
                 new google.maps.LatLng(spotLat, spotLng)
               );
-              return distance <= 10000; // 10km em metros
+              return distance <= 20000; // 20km em metros
             });
 
-            // Só notificar uma vez
-            if (!hasNotifiedRef.current) {
-              if (nearbySpots.length > 0) {
-                toast({
-                  title: "Spots encontrados!",
-                  description: `${nearbySpots.length} spots de pesca próximos a você.`
-                });
-              } else {
-                toast({
-                  title: "Nenhum spot próximo",
-                  description: "Não encontramos spots de pesca num raio de 10km."
-                });
-              }
-              hasNotifiedRef.current = true;
+            // Notificar sobre os spots encontrados
+            if (nearbySpots.length > 0) {
+              toast({
+                title: "Spots encontrados!",
+                description: `${nearbySpots.length} spots de pesca num raio de 20km.`
+              });
+            } else {
+              toast({
+                title: "Nenhum spot próximo",
+                description: "Não encontramos spots de pesca num raio de 20km."
+              });
             }
           }
         },
