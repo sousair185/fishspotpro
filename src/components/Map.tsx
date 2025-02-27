@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api';
 import { Button } from './ui/button';
 import { Plus, Navigation } from 'lucide-react';
@@ -21,6 +21,10 @@ const mapContainerStyle = {
 // Coordenadas padrão (só serão usadas se não conseguirmos a localização do usuário)
 const defaultCenter = { lat: -15.7801, lng: -47.9292 };
 
+// Defina as bibliotecas como uma constante fora do componente
+// para evitar recriação durante as renderizações
+const libraries = ['places', 'geometry'];
+
 const Map = () => {
   const [spots, setSpots] = useState<FishingSpot[]>(initialSpots);
   const [addingSpot, setAddingSpot] = useState(false);
@@ -31,7 +35,7 @@ const Map = () => {
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
-    libraries: ['places', 'geometry']
+    libraries: libraries
   });
 
   const { data: fetchedSpots } = useQuery({
@@ -54,6 +58,9 @@ const Map = () => {
     setSelectedCoordinates(null);
   };
 
+  // Use useMemo para evitar recriações desnecessárias de objetos
+  const initialCenter = useMemo(() => [mapCenter.lng, mapCenter.lat] as [number, number], [mapCenter.lng, mapCenter.lat]);
+  
   const {
     onLoad,
     handleMapClick,
@@ -62,7 +69,7 @@ const Map = () => {
     mapRef,
     centerOnUserLocation
   } = useGoogleMaps({
-    initialCenter: [mapCenter.lng, mapCenter.lat],
+    initialCenter,
     initialZoom: 12,
     spots,
     onSpotClick: (spot) => {
@@ -95,10 +102,33 @@ const Map = () => {
 
   // Buscar localização do usuário assim que o mapa carregar
   useEffect(() => {
-    if (isLoaded) {
-      centerOnUserLocation();
+    let mounted = true;
+    
+    if (isLoaded && mounted) {
+      // Pequeno timeout para garantir que tudo foi carregado corretamente
+      const timer = setTimeout(() => {
+        centerOnUserLocation();
+      }, 500);
+      
+      return () => {
+        clearTimeout(timer);
+        mounted = false;
+      };
     }
+    
+    return () => {
+      mounted = false;
+    };
   }, [isLoaded, centerOnUserLocation]);
+
+  // Memoize as opções do mapa para evitar recriação em cada renderização
+  const mapOptions = useMemo(() => ({
+    mapTypeId: 'roadmap',
+    zoomControl: true,
+    streetViewControl: true,
+    mapTypeControl: true,
+    scaleControl: true
+  }), []);
 
   if (!isLoaded) return <div>Carregando mapa...</div>;
 
@@ -110,13 +140,7 @@ const Map = () => {
         center={mapCenter}
         onLoad={onLoad}
         onClick={handleMapClick}
-        options={{
-          mapTypeId: 'roadmap',
-          zoomControl: true,
-          streetViewControl: true,
-          mapTypeControl: true,
-          scaleControl: true
-        }}
+        options={mapOptions}
       >
         {spots.map((spot) => (
           <Marker
