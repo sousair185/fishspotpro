@@ -100,26 +100,11 @@ const Map = () => {
     });
   }, [centerOnUserLocation, toast]);
 
-  // Buscar localização do usuário assim que o mapa carregar
+  // Apenas carregue o mapa, sem centralizar automaticamente
   useEffect(() => {
-    let mounted = true;
-    
-    if (isLoaded && mounted) {
-      // Pequeno timeout para garantir que tudo foi carregado corretamente
-      const timer = setTimeout(() => {
-        centerOnUserLocation();
-      }, 500);
-      
-      return () => {
-        clearTimeout(timer);
-        mounted = false;
-      };
-    }
-    
-    return () => {
-      mounted = false;
-    };
-  }, [isLoaded, centerOnUserLocation]);
+    // Efeito de carregamento inicial do mapa
+    // Não buscamos mais automaticamente a localização do usuário
+  }, [isLoaded]);
 
   // Memoize as opções do mapa para evitar recriação em cada renderização
   const mapOptions = useMemo(() => ({
