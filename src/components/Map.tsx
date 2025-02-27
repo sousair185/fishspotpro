@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, Marker, InfoWindow, Libraries } from '@react-google-maps/api';
 import { Button } from './ui/button';
 import { Plus, Navigation } from 'lucide-react';
 import { FishingSpot, initialSpots } from '@/types/spot';
@@ -23,7 +23,7 @@ const defaultCenter = { lat: -15.7801, lng: -47.9292 };
 
 // Defina as bibliotecas como uma constante fora do componente
 // para evitar recriação durante as renderizações
-const libraries = ['places', 'geometry'];
+const libraries: Libraries = ['places', 'geometry'];
 
 const Map = () => {
   const [spots, setSpots] = useState<FishingSpot[]>(initialSpots);
