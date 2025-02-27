@@ -114,14 +114,15 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
         createdAt: new Date().toISOString(),
         images: imageUrls,
         reactions: [],
+        status: 'pending',  // Todos os novos spots são marcados como pendentes
       };
 
       const docRef = await addDoc(collection(db, 'spots'), newSpot);
       onSpotAdded({ ...newSpot, id: docRef.id });
       
       toast({
-        title: "Spot adicionado!",
-        description: "Seu spot foi adicionado com sucesso"
+        title: "Spot enviado para aprovação!",
+        description: "Seu spot foi enviado e será revisado em breve."
       });
       
       onClose();
@@ -223,7 +224,7 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
               Cancelar
             </Button>
             <Button type="submit" disabled={loading || !agreement}>
-              {loading ? "Salvando..." : "Salvar Spot"}
+              {loading ? "Salvando..." : "Enviar para aprovação"}
             </Button>
           </DialogFooter>
         </form>

@@ -10,6 +10,9 @@ export interface FishingSpot {
   createdAt: string;
   images?: string[];
   reactions?: any[];
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedBy?: string;
+  reviewedAt?: string;
 }
 
 // Dados iniciais para teste
@@ -22,7 +25,8 @@ export const initialSpots: FishingSpot[] = [
     type: 'lake',
     species: ['Tucunaré', 'Tilápia'],
     createdBy: 'sistema',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    status: 'approved'
   },
   {
     id: '2',
@@ -32,6 +36,7 @@ export const initialSpots: FishingSpot[] = [
     type: 'dam',
     species: ['Dourado', 'Piranha'],
     createdBy: 'sistema',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    status: 'approved'
   }
 ];
