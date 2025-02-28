@@ -1,26 +1,48 @@
 
-import { useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
+  GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithPopup,
+  signOut,
   User
 } from 'firebase/auth';
-import { auth } from '../lib/firebase';
-import { useToast } from "@/components/ui/use-toast";
+import { auth, isUserAdmin } from '../lib/firebase';
 
-export const useAuth = () => {
+interface AuthContextType {
+  user: User | null;
+  isAdmin: boolean;
+  isLoading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAdmin: false,
+  isLoading: true,
+  signInWithGoogle: async () => {},
+  logout: async () => {}
+});
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      
+      // Verificar se o usuário é administrador
+      if (currentUser) {
+        const adminStatus = await isUserAdmin(currentUser.uid);
+        setIsAdmin(adminStatus);
+      } else {
+        setIsAdmin(false);
+      }
+      
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -30,73 +52,24 @@ export const useAuth = () => {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao FishSpot Pro",
-      });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao fazer login",
-        description: "Tente novamente mais tarde",
-      });
-    }
-  };
-
-  const loginWithEmail = async (email: string, password: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao FishSpot Pro",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao fazer login",
-        description: "Verifique suas credenciais e tente novamente",
-      });
-    }
-  };
-
-  const register = async (email: string, password: string) => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Bem-vindo ao FishSpot Pro",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar conta",
-        description: "Tente novamente mais tarde",
-      });
+      console.error('Erro ao fazer login com Google:', error);
     }
   };
 
   const logout = async () => {
     try {
       await signOut(auth);
-      toast({
-        title: "Logout realizado com sucesso",
-        description: "Até logo!",
-      });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao fazer logout",
-        description: "Tente novamente mais tarde",
-      });
+      console.error('Erro ao fazer logout:', error);
     }
   };
 
-  return {
-    user,
-    loading,
-    signInWithGoogle,
-    loginWithEmail,
-    register,
-    logout,
-  };
+  return (
+    <AuthContext.Provider value={{ user, isAdmin, isLoading, signInWithGoogle, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+export const useAuth = () => useContext(AuthContext);

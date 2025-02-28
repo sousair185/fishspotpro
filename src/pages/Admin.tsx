@@ -25,13 +25,10 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 const Admin = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("pending");
-
-  // Verificar se o usuário é administrador
-  const isAdmin = user?.email === 'admin@fishspotpro.com';
 
   // Buscar spots pendentes
   const { data: pendingSpots, isLoading: pendingLoading } = useQuery({
