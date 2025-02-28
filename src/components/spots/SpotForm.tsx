@@ -25,6 +25,7 @@ import { FishingSpot } from '@/types/spot';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SpotFormProps {
   isOpen: boolean;
@@ -45,14 +46,28 @@ const fishTypes = [
   'Outro'
 ];
 
+const interestAreas = [
+  'Loja de Pesca',
+  'Aluguel de Barcos',
+  'Guia de Pesca',
+  'Hotel/Pousada',
+  'Restaurante',
+  'Marina',
+  'Camping',
+  'Área de Lazer',
+  'Outra'
+];
+
 const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFormProps) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedFish, setSelectedFish] = useState<string[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [images, setImages] = useState<File[]>([]);
   const [agreement, setAgreement] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -75,6 +90,16 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
 
   const handleRemoveFish = (fishToRemove: string) => {
     setSelectedFish(selectedFish.filter(fish => fish !== fishToRemove));
+  };
+
+  const handleAddInterest = (value: string) => {
+    if (!selectedInterests.includes(value)) {
+      setSelectedInterests([...selectedInterests, value]);
+    }
+  };
+
+  const handleRemoveInterest = (interestToRemove: string) => {
+    setSelectedInterests(selectedInterests.filter(interest => interest !== interestToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -118,21 +143,21 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
         name,
         description,
         coordinates,
-        type: 'river',
-        species: selectedFish,
+        type: isAdmin ? 'establishment' : 'river',  // Tipo diferente para estabelecimentos
+        species: isAdmin ? selectedInterests : selectedFish,  // Usar interesses ou peixes dependendo do tipo de usuário
         createdBy: userId,
         createdAt: new Date().toISOString(),
         images: imageUrls,
         reactions: [],
-        status: 'pending',  // Todos os novos spots são marcados como pendentes
+        status: isAdmin ? 'approved' : 'pending',  // Spots criados por admins já são aprovados
       };
 
       const docRef = await addDoc(collection(db, 'spots'), newSpot);
       onSpotAdded({ ...newSpot, id: docRef.id });
       
       toast({
-        title: "Spot enviado para aprovação!",
-        description: "Seu spot foi enviado e será revisado em breve."
+        title: isAdmin ? "Estabelecimento adicionado!" : "Spot enviado para aprovação!",
+        description: isAdmin ? "O estabelecimento foi adicionado com sucesso." : "Seu spot foi enviado e será revisado em breve."
       });
       
       onClose();
@@ -140,7 +165,7 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
       console.error('Erro ao adicionar spot:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar o spot",
+        description: "Não foi possível adicionar o local",
         variant: "destructive"
       });
     } finally {
@@ -152,9 +177,11 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Novo Spot</DialogTitle>
+          <DialogTitle>{isAdmin ? "Adicionar Estabelecimento" : "Adicionar Novo Spot"}</DialogTitle>
           <DialogDescription>
-            Preencha as informações sobre o ponto de pesca
+            {isAdmin 
+              ? "Preencha as informações sobre o estabelecimento relacionado à pesca" 
+              : "Preencha as informações sobre o ponto de pesca"}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -164,7 +191,7 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Lago dos Tucunarés"
+              placeholder={isAdmin ? "Ex: Loja do Pescador" : "Ex: Lago dos Tucunarés"}
               required
             />
           </div>
@@ -175,49 +202,94 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva o local e dicas importantes"
+              placeholder={isAdmin 
+                ? "Descreva o estabelecimento, horário de funcionamento, contatos, etc." 
+                : "Descreva o local e dicas importantes"}
               required
             />
           </div>
 
-          <div className="grid w-full gap-2">
-            <Label>Peixes encontrados</Label>
-            <Select onValueChange={handleAddFish}>
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Selecione os peixes" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                {fishTypes.map((fish) => (
-                  <SelectItem key={fish} value={fish}>
-                    {fish}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedFish.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedFish.map((fish) => (
-                  <div 
-                    key={fish} 
-                    className="bg-secondary px-3 py-1.5 rounded-full text-sm flex items-center gap-1"
-                    onClick={() => handleRemoveFish(fish)}
-                  >
-                    <span>{fish}</span>
-                    <button 
-                      type="button" 
-                      className="text-xs font-bold hover:text-red-500 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveFish(fish);
-                      }}
+          {isAdmin ? (
+            // Campo de áreas de interesse para administradores
+            <div className="grid w-full gap-2">
+              <Label>Área de interesse</Label>
+              <Select onValueChange={handleAddInterest}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Selecione categorias" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {interestAreas.map((interest) => (
+                    <SelectItem key={interest} value={interest}>
+                      {interest}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedInterests.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedInterests.map((interest) => (
+                    <div 
+                      key={interest} 
+                      className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm flex items-center gap-1"
+                      onClick={() => handleRemoveInterest(interest)}
                     >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                      <span>{interest}</span>
+                      <button 
+                        type="button" 
+                        className="text-xs font-bold hover:text-red-500 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveInterest(interest);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            // Campo de peixes para usuários normais
+            <div className="grid w-full gap-2">
+              <Label>Peixes encontrados</Label>
+              <Select onValueChange={handleAddFish}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Selecione os peixes" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {fishTypes.map((fish) => (
+                    <SelectItem key={fish} value={fish}>
+                      {fish}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedFish.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedFish.map((fish) => (
+                    <div 
+                      key={fish} 
+                      className="bg-secondary px-3 py-1.5 rounded-full text-sm flex items-center gap-1"
+                      onClick={() => handleRemoveFish(fish)}
+                    >
+                      <span>{fish}</span>
+                      <button 
+                        type="button" 
+                        className="text-xs font-bold hover:text-red-500 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFish(fish);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid w-full gap-2">
             <Label htmlFor="images">Fotos (máx. 2)</Label>
@@ -239,7 +311,7 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
             />
             <Label htmlFor="agreement" className="text-sm">
               Declaro que as informações fornecidas são verdadeiras e assumo a responsabilidade
-              por este spot
+              por este {isAdmin ? "estabelecimento" : "spot"}
             </Label>
           </div>
 
@@ -248,7 +320,7 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
               Cancelar
             </Button>
             <Button type="submit" disabled={loading || !agreement}>
-              {loading ? "Salvando..." : "Enviar para aprovação"}
+              {loading ? "Salvando..." : isAdmin ? "Adicionar Estabelecimento" : "Enviar para aprovação"}
             </Button>
           </DialogFooter>
         </form>

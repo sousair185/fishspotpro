@@ -4,7 +4,7 @@ export interface FishingSpot {
   name: string;
   description: string;
   coordinates: [number, number];
-  type: 'river' | 'lake' | 'sea' | 'dam';
+  type: 'river' | 'lake' | 'sea' | 'dam' | 'establishment';
   species: string[];
   createdBy: string;
   createdAt: string;

@@ -31,7 +31,7 @@ const Map = () => {
   const [selectedCoordinates, setSelectedCoordinates] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
@@ -44,10 +44,9 @@ const Map = () => {
       const spotsCollection = collection(db, 'spots');
       
       // Apenas buscar spots aprovados, exceto se o usuário for administrador
-      // (o administrador será configurado manualmente no Firebase)
       let spotsSnapshot;
       
-      if (user && user.email === 'admin@fishspotpro.com') {
+      if (isAdmin) {
         // Administrador vê todos os spots
         spotsSnapshot = await getDocs(spotsCollection);
       } else {
@@ -70,7 +69,7 @@ const Map = () => {
 
   const handleSpotAdded = (newSpot: FishingSpot) => {
     // Só adicione ao mapa se for administrador ou se for spot aprovado
-    if (user?.email === 'admin@fishspotpro.com' || newSpot.status === 'approved') {
+    if (isAdmin || newSpot.status === 'approved') {
       setSpots(prev => [...prev, newSpot]);
     }
     setAddingSpot(false);
@@ -151,18 +150,8 @@ const Map = () => {
             key={spot.id}
             position={{ lat: spot.coordinates[1], lng: spot.coordinates[0] }}
             onClick={() => setSelectedSpot(spot)}
-            // Usar ícones diferentes para spots pendentes e rejeitados (apenas para admin)
-            icon={user?.email === 'admin@fishspotpro.com' && spot.status !== 'approved' 
-              ? {
-                  url: `data:image/svg+xml;charset=UTF-8,
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="${spot.status === 'pending' ? 'orange' : 'red'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                      <circle cx="12" cy="10" r="3"></circle>
-                    </svg>`,
-                  scaledSize: new google.maps.Size(36, 36)
-                } 
-              : undefined
-            }
+            // Configurar ícones diferentes para spots e estabelecimentos
+            icon={getMarkerIcon(spot, isAdmin)}
           />
         ))}
 
@@ -174,8 +163,14 @@ const Map = () => {
             <div className="p-2">
               <h3 className="font-bold">{selectedSpot.name}</h3>
               <p className="text-sm">{selectedSpot.description}</p>
-              <p className="text-xs mt-1">Espécies: {selectedSpot.species.join(', ')}</p>
-              {user?.email === 'admin@fishspotpro.com' && (
+              
+              {selectedSpot.type === 'establishment' ? (
+                <p className="text-xs mt-1">Categorias: {selectedSpot.species.join(', ')}</p>
+              ) : (
+                <p className="text-xs mt-1">Espécies: {selectedSpot.species.join(', ')}</p>
+              )}
+              
+              {isAdmin && (
                 <p className="text-xs mt-1 font-semibold" style={{
                   color: selectedSpot.status === 'approved' ? 'green' : 
                          selectedSpot.status === 'pending' ? 'orange' : 'red'
@@ -212,7 +207,7 @@ const Map = () => {
           className="shadow-lg"
         >
           {addingSpot ? "Cancelar" : <Plus className="mr-2" />}
-          {addingSpot ? "Clique no mapa para adicionar" : "Adicionar Spot"}
+          {addingSpot ? "Clique no mapa para adicionar" : isAdmin ? "Adicionar Local" : "Adicionar Spot"}
         </Button>
       </div>
 
@@ -243,5 +238,35 @@ const Map = () => {
     </div>
   );
 };
+
+// Função auxiliar para determinar o ícone do marcador baseado no tipo de spot
+function getMarkerIcon(spot: FishingSpot, isAdmin: boolean) {
+  // Para estabelecimentos, usar ícone azul
+  if (spot.type === 'establishment') {
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="blue" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>`,
+      scaledSize: new google.maps.Size(36, 36)
+    };
+  }
+  
+  // Para spots pendentes ou rejeitados (visíveis apenas para admin)
+  if (isAdmin && spot.status !== 'approved') {
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="${spot.status === 'pending' ? 'orange' : 'red'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>`,
+      scaledSize: new google.maps.Size(36, 36)
+    };
+  }
+  
+  // Spots normais (aprovados)
+  return undefined; // Usar o marcador padrão do Google Maps
+}
 
 export default Map;
