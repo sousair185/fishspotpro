@@ -203,6 +203,7 @@ const Map = () => {
         )}
       </GoogleMap>
 
+      {/* Botão de adicionar spot - continua no canto inferior esquerdo */}
       <div className="absolute bottom-4 left-4 z-10 space-y-2">
         <Button
           variant={addingSpot ? "secondary" : "default"}
@@ -215,7 +216,8 @@ const Map = () => {
         </Button>
       </div>
 
-      <div className="absolute bottom-4 right-4 z-10">
+      {/* Botão de localização - reposicionado para o centro da lateral esquerda */}
+      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
         <Button
           variant="default"
           size="icon"
