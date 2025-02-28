@@ -67,6 +67,16 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
     setImages(files);
   };
 
+  const handleAddFish = (value: string) => {
+    if (!selectedFish.includes(value)) {
+      setSelectedFish([...selectedFish, value]);
+    }
+  };
+
+  const handleRemoveFish = (fishToRemove: string) => {
+    setSelectedFish(selectedFish.filter(fish => fish !== fishToRemove));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreement) {
@@ -172,11 +182,11 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
 
           <div className="grid w-full gap-2">
             <Label>Peixes encontrados</Label>
-            <Select onValueChange={(value) => setSelectedFish([...selectedFish, value])}>
-              <SelectTrigger>
+            <Select onValueChange={handleAddFish}>
+              <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Selecione os peixes" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white">
                 {fishTypes.map((fish) => (
                   <SelectItem key={fish} value={fish}>
                     {fish}
@@ -187,8 +197,22 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
             {selectedFish.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {selectedFish.map((fish) => (
-                  <div key={fish} className="bg-secondary px-2 py-1 rounded-full text-sm">
-                    {fish}
+                  <div 
+                    key={fish} 
+                    className="bg-secondary px-3 py-1.5 rounded-full text-sm flex items-center gap-1"
+                    onClick={() => handleRemoveFish(fish)}
+                  >
+                    <span>{fish}</span>
+                    <button 
+                      type="button" 
+                      className="text-xs font-bold hover:text-red-500 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFish(fish);
+                      }}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>

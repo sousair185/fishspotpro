@@ -51,7 +51,7 @@ const Index = () => {
         </header>
 
         <section className="px-6 animate-slide-up">
-          <div className="aspect-[4/3] w-full rounded-2xl bg-card/80 backdrop-blur-lg border border-border/50 shadow-lg">
+          <div className="aspect-auto w-full rounded-2xl bg-card/80 backdrop-blur-lg border border-border/50 shadow-lg md:h-[500px] h-[400px]">
             <Suspense fallback={
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-center">

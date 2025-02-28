@@ -18,8 +18,8 @@ const mapContainerStyle = {
   borderRadius: '1rem'
 };
 
-// Coordenadas padrão (só serão usadas se não conseguirmos a localização do usuário)
-const defaultCenter = { lat: -15.7801, lng: -47.9292 };
+// Coordenadas de Votuporanga-SP
+const defaultCenter = { lat: -20.4206, lng: -49.9737 };
 
 // Defina as bibliotecas como uma constante fora do componente
 // para evitar recriação durante as renderizações
