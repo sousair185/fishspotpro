@@ -1,5 +1,5 @@
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { FishingSpot } from '@/types/spot';
 import { GoogleMap } from '@react-google-maps/api';
 import { useToast } from './use-toast';
@@ -13,6 +13,28 @@ interface UseGoogleMapsProps {
   isAddingMode?: boolean;
   onCenterChanged?: (center: { lat: number; lng: number }) => void;
 }
+
+// Storage key for user location
+const USER_LOCATION_KEY = 'lastUserLocation';
+
+// Helper functions to store and retrieve location from localStorage
+const saveUserLocation = (location: { lat: number; lng: number }) => {
+  try {
+    localStorage.setItem(USER_LOCATION_KEY, JSON.stringify(location));
+  } catch (error) {
+    console.error('Error saving location to localStorage:', error);
+  }
+};
+
+const getSavedUserLocation = (): { lat: number; lng: number } | null => {
+  try {
+    const savedLocation = localStorage.getItem(USER_LOCATION_KEY);
+    return savedLocation ? JSON.parse(savedLocation) : null;
+  } catch (error) {
+    console.error('Error retrieving location from localStorage:', error);
+    return null;
+  }
+};
 
 export const useGoogleMaps = ({
   initialCenter,
@@ -29,7 +51,15 @@ export const useGoogleMaps = ({
 
   const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-  }, []);
+    
+    // Check if there's a saved location on map load
+    const savedLocation = getSavedUserLocation();
+    if (savedLocation) {
+      map.panTo(savedLocation);
+      map.setZoom(14);
+      onCenterChanged?.(savedLocation);
+    }
+  }, [onCenterChanged]);
 
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     if (!isAddingMode || !onMapClick || !e.latLng) return;
@@ -45,6 +75,9 @@ export const useGoogleMaps = ({
             lat: position.coords.latitude,
             lng: position.coords.longitude
           };
+
+          // Save the user location to localStorage
+          saveUserLocation(userLocation);
 
           if (mapRef.current) {
             mapRef.current.panTo(userLocation);

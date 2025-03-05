@@ -21,15 +21,32 @@ const mapContainerStyle = {
 // Coordenadas de Votuporanga-SP
 const defaultCenter = { lat: -20.4206, lng: -49.9737 };
 
+// Storage key for user location (same as in useGoogleMaps)
+const USER_LOCATION_KEY = 'lastUserLocation';
+
+// Helper function to get saved location
+const getSavedUserLocation = (): { lat: number; lng: number } | null => {
+  try {
+    const savedLocation = localStorage.getItem(USER_LOCATION_KEY);
+    return savedLocation ? JSON.parse(savedLocation) : null;
+  } catch (error) {
+    console.error('Error retrieving location from localStorage:', error);
+    return null;
+  }
+};
+
 // Defina as bibliotecas como uma constante fora do componente
 // para evitar recriação durante as renderizações
 const libraries: Libraries = ['places', 'geometry'];
 
 const Map = () => {
+  // Check for saved location when initializing mapCenter
+  const savedLocation = getSavedUserLocation();
+  const [mapCenter, setMapCenter] = useState(savedLocation || defaultCenter);
+  
   const [spots, setSpots] = useState<FishingSpot[]>(initialSpots);
   const [addingSpot, setAddingSpot] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState<[number, number] | null>(null);
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
 
@@ -117,12 +134,6 @@ const Map = () => {
       description: "Buscando sua localização...",
     });
   }, [centerOnUserLocation, toast]);
-
-  // Apenas carregue o mapa, sem centralizar automaticamente
-  useEffect(() => {
-    // Efeito de carregamento inicial do mapa
-    // Não buscamos mais automaticamente a localização do usuário
-  }, [isLoaded]);
 
   // Memoize as opções do mapa para evitar recriação em cada renderização
   const mapOptions = useMemo(() => ({
