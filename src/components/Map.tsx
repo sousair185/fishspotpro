@@ -30,7 +30,6 @@ const Map = () => {
   const [addingSpot, setAddingSpot] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
-  const [hasUsedLocation, setHasUsedLocation] = useState(false);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
 
@@ -108,9 +107,6 @@ const Map = () => {
     isAddingMode: addingSpot,
     onCenterChanged: (newCenter) => {
       setMapCenter(newCenter);
-    },
-    onLocationUsed: () => {
-      setHasUsedLocation(true);
     }
   });
 
@@ -122,57 +118,11 @@ const Map = () => {
     });
   }, [centerOnUserLocation, toast]);
 
-  // Track when the component becomes visible/active
+  // Apenas carregue o mapa, sem centralizar automaticamente
   useEffect(() => {
-    if (!isLoaded) return;
-
-    // Create a visibility change listener
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && hasUsedLocation) {
-        // Auto-trigger location finding when returning to the page
-        centerOnUserLocation();
-      }
-    };
-
-    // Listen for visibility changes (tab switching)
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Cleanup
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isLoaded, hasUsedLocation, centerOnUserLocation]);
-
-  // Create a focus handler for the map container
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    // Create an intersection observer to detect when the map is visible in the viewport
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && hasUsedLocation) {
-          // Map is now visible and location was used before
-          centerOnUserLocation();
-        }
-      },
-      { threshold: 0.1 } // Trigger when 10% of the map is visible
-    );
-
-    // Get the map container element
-    const mapContainer = document.querySelector('#map-container');
-    if (mapContainer) {
-      observer.observe(mapContainer);
-    }
-
-    // Cleanup
-    return () => {
-      if (mapContainer) {
-        observer.unobserve(mapContainer);
-      }
-      observer.disconnect();
-    };
-  }, [isLoaded, hasUsedLocation, centerOnUserLocation]);
+    // Efeito de carregamento inicial do mapa
+    // Não buscamos mais automaticamente a localização do usuário
+  }, [isLoaded]);
 
   // Memoize as opções do mapa para evitar recriação em cada renderização
   const mapOptions = useMemo(() => ({
@@ -186,7 +136,7 @@ const Map = () => {
   if (!isLoaded) return <div>Carregando mapa...</div>;
 
   return (
-    <div id="map-container" className="relative w-full h-full rounded-2xl overflow-hidden">
+    <div className="relative w-full h-full rounded-2xl overflow-hidden">
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         zoom={12}
