@@ -12,6 +12,7 @@ interface UseGoogleMapsProps {
   onMapClick?: (coordinates: [number, number]) => void;
   isAddingMode?: boolean;
   onCenterChanged?: (center: { lat: number; lng: number }) => void;
+  onLocationUsed?: () => void;
 }
 
 export const useGoogleMaps = ({
@@ -21,7 +22,8 @@ export const useGoogleMaps = ({
   onSpotClick,
   onMapClick,
   isAddingMode,
-  onCenterChanged
+  onCenterChanged,
+  onLocationUsed
 }: UseGoogleMapsProps) => {
   const mapRef = useRef<google.maps.Map | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
@@ -74,6 +76,9 @@ export const useGoogleMaps = ({
                 description: "Não encontramos spots de pesca num raio de 20km."
               });
             }
+
+            // Notify that location was used
+            onLocationUsed?.();
           }
         },
         (error) => {
@@ -91,7 +96,7 @@ export const useGoogleMaps = ({
         variant: "destructive"
       });
     }
-  }, [spots, toast, onCenterChanged]);
+  }, [spots, toast, onCenterChanged, onLocationUsed]);
 
   return {
     onLoad,
