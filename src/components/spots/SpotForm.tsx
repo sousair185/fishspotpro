@@ -12,13 +12,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { FishingSpot } from '@/types/spot';
@@ -35,34 +28,11 @@ interface SpotFormProps {
   userId: string;
 }
 
-const fishTypes = [
-  'Tucunaré',
-  'Tilápia',
-  'Dourado',
-  'Traíra',
-  'Tambaqui',
-  'Pintado',
-  'Pacu',
-  'Outro'
-];
-
-const interestAreas = [
-  'Loja de Pesca',
-  'Aluguel de Barcos',
-  'Guia de Pesca',
-  'Hotel/Pousada',
-  'Restaurante',
-  'Marina',
-  'Camping',
-  'Área de Lazer',
-  'Outra'
-];
-
 const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFormProps) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedFish, setSelectedFish] = useState<string[]>([]);
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [selectedFishInput, setSelectedFishInput] = useState('');
+  const [selectedInterestInput, setSelectedInterestInput] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [agreement, setAgreement] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -82,32 +52,31 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
     setImages(files);
   };
 
-  const handleAddFish = (value: string) => {
-    if (!selectedFish.includes(value)) {
-      setSelectedFish([...selectedFish, value]);
-    }
-  };
-
-  const handleRemoveFish = (fishToRemove: string) => {
-    setSelectedFish(selectedFish.filter(fish => fish !== fishToRemove));
-  };
-
-  const handleAddInterest = (value: string) => {
-    if (!selectedInterests.includes(value)) {
-      setSelectedInterests([...selectedInterests, value]);
-    }
-  };
-
-  const handleRemoveInterest = (interestToRemove: string) => {
-    setSelectedInterests(selectedInterests.filter(interest => interest !== interestToRemove));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreement) {
       toast({
         title: "Acordo necessário",
         description: "Você precisa concordar com os termos para continuar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validar que alguma informação foi inserida nos campos específicos
+    if (isAdmin && !selectedInterestInput.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Por favor, informe a área de interesse",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!isAdmin && !selectedFishInput.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Por favor, informe as espécies de peixes encontradas",
         variant: "destructive"
       });
       return;
@@ -139,12 +108,17 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
         })
       );
 
+      // Processar os inputs de texto para criar arrays
+      const speciesArray = isAdmin 
+        ? selectedInterestInput.split(',').map(s => s.trim()).filter(s => s)
+        : selectedFishInput.split(',').map(s => s.trim()).filter(s => s);
+
       const newSpot: Omit<FishingSpot, 'id'> = {
         name,
         description,
         coordinates,
         type: isAdmin ? 'establishment' : 'river',  // Tipo diferente para estabelecimentos
-        species: isAdmin ? selectedInterests : selectedFish,  // Usar interesses ou peixes dependendo do tipo de usuário
+        species: speciesArray,  // Usar interesses ou peixes como array
         createdBy: userId,
         createdAt: new Date().toISOString(),
         images: imageUrls,
@@ -210,84 +184,34 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
           </div>
 
           {isAdmin ? (
-            // Campo de áreas de interesse para administradores
+            // Campo de áreas de interesse para administradores (input de texto)
             <div className="grid w-full gap-2">
-              <Label>Área de interesse</Label>
-              <Select onValueChange={handleAddInterest}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Selecione categorias" />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  {interestAreas.map((interest) => (
-                    <SelectItem key={interest} value={interest}>
-                      {interest}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedInterests.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedInterests.map((interest) => (
-                    <div 
-                      key={interest} 
-                      className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm flex items-center gap-1"
-                      onClick={() => handleRemoveInterest(interest)}
-                    >
-                      <span>{interest}</span>
-                      <button 
-                        type="button" 
-                        className="text-xs font-bold hover:text-red-500 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveInterest(interest);
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <Label htmlFor="interests">Área de interesse</Label>
+              <Input
+                id="interests"
+                value={selectedInterestInput}
+                onChange={(e) => setSelectedInterestInput(e.target.value)}
+                placeholder="Loja de Pesca, Aluguel de Barcos, etc. (separados por vírgula)"
+                required
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Insira as áreas de interesse separadas por vírgula
+              </p>
             </div>
           ) : (
-            // Campo de peixes para usuários normais
+            // Campo de peixes para usuários normais (input de texto)
             <div className="grid w-full gap-2">
-              <Label>Peixes encontrados</Label>
-              <Select onValueChange={handleAddFish}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Selecione os peixes" />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  {fishTypes.map((fish) => (
-                    <SelectItem key={fish} value={fish}>
-                      {fish}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedFish.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedFish.map((fish) => (
-                    <div 
-                      key={fish} 
-                      className="bg-secondary px-3 py-1.5 rounded-full text-sm flex items-center gap-1"
-                      onClick={() => handleRemoveFish(fish)}
-                    >
-                      <span>{fish}</span>
-                      <button 
-                        type="button" 
-                        className="text-xs font-bold hover:text-red-500 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveFish(fish);
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <Label htmlFor="fish">Peixes encontrados</Label>
+              <Input
+                id="fish"
+                value={selectedFishInput}
+                onChange={(e) => setSelectedFishInput(e.target.value)}
+                placeholder="Tucunaré, Tilápia, Dourado, etc. (separados por vírgula)"
+                required
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Insira os tipos de peixes separados por vírgula
+              </p>
             </div>
           )}
 
@@ -330,3 +254,4 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
 };
 
 export default SpotForm;
+
