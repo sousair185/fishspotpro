@@ -43,7 +43,7 @@ const Index = () => {
       </div>
 
       {/* Logo fixo no topo */}
-      <div className={`fixed top-4 left-4 z-40 transition-all duration-500 ${contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+      <div className={`fixed top-16 left-4 z-40 transition-all duration-500 ${contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
         <img 
           src="/lovable-uploads/29819dee-d106-4aa4-b4c7-8a52f509d5e8.png" 
           alt="FishSpot Pro Logo"
@@ -51,7 +51,7 @@ const Index = () => {
         />
       </div>
 
-      <main className={`pb-20 transition-opacity duration-500 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <main className={`pb-20 pt-12 transition-opacity duration-500 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}>
         <header className="p-6 animate-fade-in">
           <div className="flex items-center justify-end mb-8">
             <div>

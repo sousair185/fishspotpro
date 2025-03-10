@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from "../components/layout/Navbar";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,8 @@ import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/fire
 import { db } from '@/lib/firebase';
 import { FishingSpot } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Bell } from 'lucide-react';
+import { NotificationManager } from '@/components/admin/NotificationManager';
 
 const Admin = () => {
   const { user, isAdmin } = useAuth();
@@ -245,24 +245,30 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary to-background">
-      <main className="pb-20 px-6">
+      <main className="pb-20 px-6 pt-16">
         <header className="p-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Administração de Spots</h1>
-          <p className="text-muted-foreground">Gerencie spots criados pelos usuários</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Administração</h1>
+          <p className="text-muted-foreground">Gerencie spots e notificações do sistema</p>
         </header>
 
         <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="pending" className="relative">
-              Pendentes
+              Spots Pendentes
               {pendingSpots && pendingSpots.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                   {pendingSpots.length}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="approved">Aprovados</TabsTrigger>
-            <TabsTrigger value="rejected">Rejeitados</TabsTrigger>
+            <TabsTrigger value="approved">Spots Aprovados</TabsTrigger>
+            <TabsTrigger value="rejected">Spots Rejeitados</TabsTrigger>
+            <TabsTrigger value="notifications">
+              <span className="flex items-center gap-1">
+                <Bell className="h-4 w-4" />
+                Notificações
+              </span>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="pending" className="mt-4">
@@ -287,6 +293,10 @@ const Admin = () => {
             ) : (
               renderSpotCards(rejectedSpots)
             )}
+          </TabsContent>
+          
+          <TabsContent value="notifications" className="mt-4">
+            <NotificationManager />
           </TabsContent>
         </Tabs>
       </main>

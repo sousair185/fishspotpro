@@ -8,6 +8,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect } from 'react';
 import { auth } from './lib/firebase';
 import { AuthProvider } from './hooks/useAuth';
+import { NotificationBanner } from './components/notifications/NotificationBanner';
 import Index from "./pages/Index";
 import Spots from "./pages/Spots";
 import Profile from "./pages/Profile";
@@ -29,6 +30,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          <NotificationBanner />
           <Toaster />
           <Sonner />
           <BrowserRouter>
