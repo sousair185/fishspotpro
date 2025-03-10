@@ -12,6 +12,7 @@ import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SpotLike } from './spots/SpotLike';
 import { SpotBoost } from './spots/SpotBoost';
+import { SpotShare } from './spots/SpotShare';
 
 const mapContainerStyle = {
   width: '100%',
@@ -203,14 +204,17 @@ const Map = () => {
               )}
 
               <div className="flex items-center justify-between mt-2">
-                <SpotLike
-                  spotId={selectedSpot.id}
-                  likes={selectedSpot.likes || []}
-                  likeCount={selectedSpot.likeCount || 0}
-                  onLikeUpdate={() => {
-                    queryClient.invalidateQueries({ queryKey: ['spots'] });
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <SpotLike
+                    spotId={selectedSpot.id}
+                    likes={selectedSpot.likes || []}
+                    likeCount={selectedSpot.likeCount || 0}
+                    onLikeUpdate={() => {
+                      queryClient.invalidateQueries({ queryKey: ['spots'] });
+                    }}
+                  />
+                  <SpotShare spot={selectedSpot} />
+                </div>
                 <SpotBoost
                   spotId={selectedSpot.id}
                   boosted={selectedSpot.boosted}

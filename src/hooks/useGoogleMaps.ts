@@ -1,4 +1,3 @@
-
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { FishingSpot } from '@/types/spot';
 import { GoogleMap } from '@react-google-maps/api';
@@ -49,15 +48,70 @@ export const useGoogleMaps = ({
   const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
   const { toast } = useToast();
 
+  // Check for URL parameters for shared spots
+  useEffect(() => {
+    // Parse URL for shared spot parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = urlParams.get('lat');
+    const lng = urlParams.get('lng');
+    const spotId = urlParams.get('spotId');
+    
+    if (lat && lng) {
+      const sharedLocation = { 
+        lat: parseFloat(lat), 
+        lng: parseFloat(lng) 
+      };
+      
+      // If map is already loaded, center it on the shared location
+      if (mapRef.current) {
+        mapRef.current.panTo(sharedLocation);
+        mapRef.current.setZoom(14);
+        
+        // If a spot ID was provided, find and select that spot
+        if (spotId && spots.length > 0) {
+          const sharedSpot = spots.find(spot => spot.id === spotId);
+          if (sharedSpot) {
+            setSelectedSpot(sharedSpot);
+            if (onSpotClick) {
+              onSpotClick(sharedSpot);
+            }
+          }
+        }
+      }
+      
+      // Clean URL parameters after processing
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [spots, onSpotClick]);
+
   const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     
-    // Check if there's a saved location on map load
-    const savedLocation = getSavedUserLocation();
-    if (savedLocation) {
-      map.panTo(savedLocation);
+    // Check if there are URL parameters for shared location first
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = urlParams.get('lat');
+    const lng = urlParams.get('lng');
+    
+    if (lat && lng) {
+      const sharedLocation = { 
+        lat: parseFloat(lat), 
+        lng: parseFloat(lng) 
+      };
+      map.panTo(sharedLocation);
       map.setZoom(14);
-      onCenterChanged?.(savedLocation);
+      onCenterChanged?.(sharedLocation);
+      
+      // Clean URL parameters after processing
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    // Otherwise check for saved location
+    else {
+      const savedLocation = getSavedUserLocation();
+      if (savedLocation) {
+        map.panTo(savedLocation);
+        map.setZoom(14);
+        onCenterChanged?.(savedLocation);
+      }
     }
   }, [onCenterChanged]);
 
