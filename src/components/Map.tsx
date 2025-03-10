@@ -35,7 +35,11 @@ const getSavedUserLocation = (): { lat: number; lng: number } | null => {
 
 const libraries: Libraries = ['places', 'geometry'];
 
-const Map = () => {
+interface MapProps {
+  selectedSpotFromList?: FishingSpot | null;
+}
+
+const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   const savedLocation = getSavedUserLocation();
   const [mapCenter, setMapCenter] = useState(savedLocation || defaultCenter);
   
@@ -83,6 +87,8 @@ const Map = () => {
     }
     setAddingSpot(false);
     setSelectedCoordinates(null);
+    queryClient.invalidateQueries({ queryKey: ['spots'] });
+    queryClient.invalidateQueries({ queryKey: ['popularSpots'] });
   };
 
   const initialCenter = useMemo(() => [mapCenter.lng, mapCenter.lat] as [number, number], [mapCenter.lng, mapCenter.lat]);
@@ -93,7 +99,8 @@ const Map = () => {
     selectedSpot,
     setSelectedSpot,
     mapRef,
-    centerOnUserLocation
+    centerOnUserLocation,
+    centerOnCoordinates
   } = useGoogleMaps({
     initialCenter,
     initialZoom: 12,
@@ -117,6 +124,25 @@ const Map = () => {
       setMapCenter(newCenter);
     }
   });
+
+  // Effect to handle centering the map on the selected spot from the list
+  useEffect(() => {
+    if (selectedSpotFromList && isLoaded && mapRef.current) {
+      const spotCoordinates = {
+        lat: selectedSpotFromList.coordinates[1],
+        lng: selectedSpotFromList.coordinates[0]
+      };
+      
+      centerOnCoordinates(spotCoordinates);
+      setSelectedSpot(selectedSpotFromList);
+      
+      // Show a toast notification
+      toast({
+        title: "Spot localizado",
+        description: `${selectedSpotFromList.name} centralizado no mapa`
+      });
+    }
+  }, [selectedSpotFromList, isLoaded, centerOnCoordinates, setSelectedSpot, toast]);
 
   const handleLocationClick = useCallback(() => {
     centerOnUserLocation();
@@ -164,6 +190,10 @@ const Map = () => {
             spot={selectedSpot} 
             isAdmin={isAdmin} 
             onClose={() => setSelectedSpot(null)}
+            onLikeUpdate={() => {
+              queryClient.invalidateQueries({ queryKey: ['spots'] });
+              queryClient.invalidateQueries({ queryKey: ['popularSpots'] });
+            }}
           />
         )}
       </GoogleMap>

@@ -3,10 +3,13 @@ import { Suspense, useState, useEffect } from "react";
 import { Map as MapIcon } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Map from "../components/Map";
+import { PopularSpots } from "@/components/spots/PopularSpots";
+import { FishingSpot } from "@/types/spot";
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
   const [contentVisible, setContentVisible] = useState(false);
+  const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
 
   useEffect(() => {
     // Simula um tempo de carregamento inicial
@@ -17,6 +20,16 @@ const Index = () => {
       }, 300);
     }, 2000);
   }, []);
+
+  const handleSpotSelect = (spot: FishingSpot) => {
+    setSelectedSpot(spot);
+    
+    // Scroll to map to ensure it's visible
+    const mapElement = document.getElementById('map-container');
+    if (mapElement) {
+      mapElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary to-background">
@@ -51,7 +64,7 @@ const Index = () => {
         </header>
 
         <section className="px-6 animate-slide-up">
-          <div className="aspect-auto w-full rounded-2xl bg-card/80 backdrop-blur-lg border border-border/50 shadow-lg md:h-[500px] h-[400px]">
+          <div id="map-container" className="aspect-auto w-full rounded-2xl bg-card/80 backdrop-blur-lg border border-border/50 shadow-lg md:h-[500px] h-[400px]">
             <Suspense fallback={
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-center">
@@ -64,17 +77,12 @@ const Index = () => {
                 </div>
               </div>
             }>
-              <Map />
+              <Map selectedSpotFromList={selectedSpot} />
             </Suspense>
           </div>
 
           <div className="mt-8 space-y-4">
-            <div className="p-6 rounded-2xl bg-card/80 backdrop-blur-lg border border-border/50">
-              <h3 className="text-lg font-semibold mb-2">Spots Populares</h3>
-              <p className="text-sm text-muted-foreground">
-                Em breve você poderá descobrir os melhores pontos de pesca.
-              </p>
-            </div>
+            <PopularSpots onSpotSelect={handleSpotSelect} />
           </div>
         </section>
       </main>

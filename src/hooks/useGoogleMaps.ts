@@ -1,3 +1,4 @@
+
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { FishingSpot } from '@/types/spot';
 import { GoogleMap } from '@react-google-maps/api';
@@ -121,6 +122,14 @@ export const useGoogleMaps = ({
     onMapClick(coordinates);
   }, [isAddingMode, onMapClick]);
 
+  const centerOnCoordinates = useCallback((coordinates: { lat: number; lng: number }) => {
+    if (mapRef.current) {
+      mapRef.current.panTo(coordinates);
+      mapRef.current.setZoom(14);
+      onCenterChanged?.(coordinates);
+    }
+  }, [onCenterChanged]);
+
   const centerOnUserLocation = useCallback(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -186,6 +195,7 @@ export const useGoogleMaps = ({
     selectedSpot,
     setSelectedSpot,
     mapRef,
-    centerOnUserLocation
+    centerOnUserLocation,
+    centerOnCoordinates
   };
 };

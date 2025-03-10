@@ -6,17 +6,15 @@ import { SpotLike } from './SpotLike';
 import { SpotShare } from './SpotShare';
 import { SpotBoost } from './SpotBoost';
 import { Rocket } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface SpotInfoWindowProps {
   spot: FishingSpot;
   isAdmin: boolean;
   onClose: () => void;
+  onLikeUpdate?: () => void;
 }
 
-export function SpotInfoWindow({ spot, isAdmin, onClose }: SpotInfoWindowProps) {
-  const queryClient = useQueryClient();
-  
+export function SpotInfoWindow({ spot, isAdmin, onClose, onLikeUpdate }: SpotInfoWindowProps) {
   return (
     <InfoWindow
       position={{ lat: spot.coordinates[1], lng: spot.coordinates[0] }}
@@ -70,18 +68,14 @@ export function SpotInfoWindow({ spot, isAdmin, onClose }: SpotInfoWindowProps) 
               spotId={spot.id}
               likes={spot.likes || []}
               likeCount={spot.likeCount || 0}
-              onLikeUpdate={() => {
-                queryClient.invalidateQueries({ queryKey: ['spots'] });
-              }}
+              onLikeUpdate={onLikeUpdate}
             />
             <SpotShare spot={spot} />
           </div>
           <SpotBoost
             spotId={spot.id}
             boosted={spot.boosted}
-            onBoostUpdate={() => {
-              queryClient.invalidateQueries({ queryKey: ['spots'] });
-            }}
+            onBoostUpdate={onLikeUpdate}
           />
         </div>
       </div>
