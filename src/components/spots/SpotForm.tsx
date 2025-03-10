@@ -122,8 +122,9 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
         createdBy: userId,
         createdAt: new Date().toISOString(),
         images: imageUrls,
-        reactions: [],
         status: isAdmin ? 'approved' : 'pending',  // Spots criados por admins já são aprovados
+        likes: [],
+        likeCount: 0
       };
 
       const docRef = await addDoc(collection(db, 'spots'), newSpot);
@@ -254,4 +255,3 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
 };
 
 export default SpotForm;
-

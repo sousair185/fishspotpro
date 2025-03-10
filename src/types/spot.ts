@@ -32,7 +32,9 @@ export const initialSpots: FishingSpot[] = [
     species: ['Tucunaré', 'Tilápia'],
     createdBy: 'sistema',
     createdAt: new Date().toISOString(),
-    status: 'approved'
+    status: 'approved',
+    likes: [],
+    likeCount: 0
   },
   {
     id: '2',
@@ -43,6 +45,8 @@ export const initialSpots: FishingSpot[] = [
     species: ['Dourado', 'Piranha'],
     createdBy: 'sistema',
     createdAt: new Date().toISOString(),
-    status: 'approved'
+    status: 'approved',
+    likes: [],
+    likeCount: 0
   }
 ];

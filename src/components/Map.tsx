@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import SpotForm from './spots/SpotForm';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SpotLike } from './spots/SpotLike';
 import { SpotBoost } from './spots/SpotBoost';
 
@@ -19,13 +19,10 @@ const mapContainerStyle = {
   borderRadius: '1rem'
 };
 
-// Coordenadas de Votuporanga-SP
 const defaultCenter = { lat: -20.4206, lng: -49.9737 };
 
-// Storage key for user location (same as in useGoogleMaps)
 const USER_LOCATION_KEY = 'lastUserLocation';
 
-// Helper function to get saved location
 const getSavedUserLocation = (): { lat: number; lng: number } | null => {
   try {
     const savedLocation = localStorage.getItem(USER_LOCATION_KEY);
@@ -36,12 +33,9 @@ const getSavedUserLocation = (): { lat: number; lng: number } | null => {
   }
 };
 
-// Defina as bibliotecas como uma constante fora do componente
-// para evitar recriação durante as renderizações
 const libraries: Libraries = ['places', 'geometry'];
 
 const Map = () => {
-  // Check for saved location when initializing mapCenter
   const savedLocation = getSavedUserLocation();
   const [mapCenter, setMapCenter] = useState(savedLocation || defaultCenter);
   
@@ -50,6 +44,7 @@ const Map = () => {
   const [selectedCoordinates, setSelectedCoordinates] = useState<[number, number] | null>(null);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
+  const queryClient = useQueryClient();
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
@@ -61,14 +56,11 @@ const Map = () => {
     queryFn: async () => {
       const spotsCollection = collection(db, 'spots');
       
-      // Apenas buscar spots aprovados, exceto se o usuário for administrador
       let spotsSnapshot;
       
       if (isAdmin) {
-        // Administrador vê todos os spots
         spotsSnapshot = await getDocs(spotsCollection);
       } else {
-        // Usuários comuns só veem spots aprovados
         spotsSnapshot = await getDocs(
           query(spotsCollection, where('status', '==', 'approved'))
         );
@@ -86,7 +78,6 @@ const Map = () => {
   });
 
   const handleSpotAdded = (newSpot: FishingSpot) => {
-    // Só adicione ao mapa se for administrador ou se for spot aprovado
     if (isAdmin || newSpot.status === 'approved') {
       setSpots(prev => [...prev, newSpot]);
     }
@@ -94,7 +85,6 @@ const Map = () => {
     setSelectedCoordinates(null);
   };
 
-  // Use useMemo para evitar recriações desnecessárias de objetos
   const initialCenter = useMemo(() => [mapCenter.lng, mapCenter.lat] as [number, number], [mapCenter.lng, mapCenter.lat]);
   
   const {
@@ -136,7 +126,6 @@ const Map = () => {
     });
   }, [centerOnUserLocation, toast]);
 
-  // Memoize as opções do mapa para evitar recriação em cada renderização
   const mapOptions = useMemo(() => ({
     mapTypeId: 'roadmap',
     zoomControl: true,
@@ -162,7 +151,6 @@ const Map = () => {
             key={spot.id}
             position={{ lat: spot.coordinates[1], lng: spot.coordinates[0] }}
             onClick={() => setSelectedSpot(spot)}
-            // Configurar ícones diferentes para spots e estabelecimentos
             icon={getMarkerIcon(spot, isAdmin)}
           />
         ))}
@@ -220,7 +208,6 @@ const Map = () => {
                   likes={selectedSpot.likes || []}
                   likeCount={selectedSpot.likeCount || 0}
                   onLikeUpdate={() => {
-                    // Recarregar os spots após like
                     queryClient.invalidateQueries({ queryKey: ['spots'] });
                   }}
                 />
@@ -228,7 +215,6 @@ const Map = () => {
                   spotId={selectedSpot.id}
                   boosted={selectedSpot.boosted}
                   onBoostUpdate={() => {
-                    // Recarregar os spots após boost
                     queryClient.invalidateQueries({ queryKey: ['spots'] });
                   }}
                 />
@@ -238,7 +224,6 @@ const Map = () => {
         )}
       </GoogleMap>
 
-      {/* Botão de adicionar spot - continua no canto inferior esquerdo */}
       <div className="absolute bottom-4 left-4 z-10 space-y-2">
         <Button
           variant={addingSpot ? "secondary" : "default"}
@@ -251,7 +236,6 @@ const Map = () => {
         </Button>
       </div>
 
-      {/* Botão de localização - reposicionado para o centro da lateral esquerda */}
       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
         <Button
           variant="default"
@@ -279,12 +263,9 @@ const Map = () => {
   );
 };
 
-// Função auxiliar para determinar o ícone do marcador baseado no tipo de spot
 function getMarkerIcon(spot: FishingSpot, isAdmin: boolean) {
-  // Check if spot is boosted
   const isBoosted = spot.boosted && new Date(spot.boosted.endDate) > new Date();
   
-  // For boosted spots, use a special icon
   if (isBoosted) {
     return {
       url: `data:image/svg+xml;charset=UTF-8,
@@ -296,7 +277,6 @@ function getMarkerIcon(spot: FishingSpot, isAdmin: boolean) {
     };
   }
   
-  // For establishments, use blue icon
   if (spot.type === 'establishment') {
     return {
       url: `data:image/svg+xml;charset=UTF-8,
@@ -308,7 +288,6 @@ function getMarkerIcon(spot: FishingSpot, isAdmin: boolean) {
     };
   }
   
-  // For spots pending or rejected (visible only to admin)
   if (isAdmin && spot.status !== 'approved') {
     return {
       url: `data:image/svg+xml;charset=UTF-8,
@@ -320,8 +299,7 @@ function getMarkerIcon(spot: FishingSpot, isAdmin: boolean) {
     };
   }
   
-  // Regular spots (approved)
-  return undefined; // Use default Google Maps marker
+  return undefined;
 }
 
 export default Map;
