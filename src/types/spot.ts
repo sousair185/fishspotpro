@@ -9,10 +9,16 @@ export interface FishingSpot {
   createdBy: string;
   createdAt: string;
   images?: string[];
-  reactions?: any[];
   status: 'pending' | 'approved' | 'rejected';
   reviewedBy?: string;
   reviewedAt?: string;
+  likes: string[]; // Array of user IDs who liked
+  likeCount: number;
+  boosted?: {
+    startDate: string;
+    endDate: string;
+    boostedBy: string;
+  };
 }
 
 // Dados iniciais para teste

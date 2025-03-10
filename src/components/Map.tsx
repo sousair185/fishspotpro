@@ -1,8 +1,7 @@
-
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { GoogleMap, useLoadScript, Marker, InfoWindow, Libraries } from '@react-google-maps/api';
 import { Button } from './ui/button';
-import { Plus, Navigation } from 'lucide-react';
+import { Plus, Navigation, Rocket } from 'lucide-react';
 import { FishingSpot, initialSpots } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +10,8 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import SpotForm from './spots/SpotForm';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useQuery } from '@tanstack/react-query';
+import { SpotLike } from './spots/SpotLike';
+import { SpotBoost } from './spots/SpotBoost';
 
 const mapContainerStyle = {
   width: '100%',
@@ -192,6 +193,14 @@ const Map = () => {
                   }
                 </p>
               )}
+
+              {selectedSpot.boosted && new Date(selectedSpot.boosted.endDate) > new Date() && (
+                <div className="flex items-center gap-1 text-xs text-yellow-600 mt-1">
+                  <Rocket className="h-3 w-3" />
+                  <span>Spot em destaque</span>
+                </div>
+              )}
+
               {selectedSpot.images && (
                 <div className="mt-2 flex gap-2">
                   {selectedSpot.images.map((url, index) => (
@@ -204,6 +213,26 @@ const Map = () => {
                   ))}
                 </div>
               )}
+
+              <div className="flex items-center justify-between mt-2">
+                <SpotLike
+                  spotId={selectedSpot.id}
+                  likes={selectedSpot.likes || []}
+                  likeCount={selectedSpot.likeCount || 0}
+                  onLikeUpdate={() => {
+                    // Recarregar os spots após like
+                    queryClient.invalidateQueries({ queryKey: ['spots'] });
+                  }}
+                />
+                <SpotBoost
+                  spotId={selectedSpot.id}
+                  boosted={selectedSpot.boosted}
+                  onBoostUpdate={() => {
+                    // Recarregar os spots após boost
+                    queryClient.invalidateQueries({ queryKey: ['spots'] });
+                  }}
+                />
+              </div>
             </div>
           </InfoWindow>
         )}
@@ -252,7 +281,22 @@ const Map = () => {
 
 // Função auxiliar para determinar o ícone do marcador baseado no tipo de spot
 function getMarkerIcon(spot: FishingSpot, isAdmin: boolean) {
-  // Para estabelecimentos, usar ícone azul
+  // Check if spot is boosted
+  const isBoosted = spot.boosted && new Date(spot.boosted.endDate) > new Date();
+  
+  // For boosted spots, use a special icon
+  if (isBoosted) {
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="gold" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>`,
+      scaledSize: new google.maps.Size(36, 36)
+    };
+  }
+  
+  // For establishments, use blue icon
   if (spot.type === 'establishment') {
     return {
       url: `data:image/svg+xml;charset=UTF-8,
@@ -264,7 +308,7 @@ function getMarkerIcon(spot: FishingSpot, isAdmin: boolean) {
     };
   }
   
-  // Para spots pendentes ou rejeitados (visíveis apenas para admin)
+  // For spots pending or rejected (visible only to admin)
   if (isAdmin && spot.status !== 'approved') {
     return {
       url: `data:image/svg+xml;charset=UTF-8,
@@ -276,8 +320,8 @@ function getMarkerIcon(spot: FishingSpot, isAdmin: boolean) {
     };
   }
   
-  // Spots normais (aprovados)
-  return undefined; // Usar o marcador padrão do Google Maps
+  // Regular spots (approved)
+  return undefined; // Use default Google Maps marker
 }
 
 export default Map;
