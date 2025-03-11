@@ -77,11 +77,11 @@ export const useNotifications = () => {
       
       // Query notifications that haven't expired yet
       const notificationsRef = collection(db, 'notifications');
+      
+      // Create the query without the orderBy clause that was causing issues
       const q = query(
         notificationsRef,
-        where('expiresAt', '>', now),
-        orderBy('expiresAt', 'desc'),
-        orderBy('createdAt', 'desc')
+        where('expiresAt', '>', now)
       );
       
       const snapshot = await getDocs(q);
@@ -90,7 +90,17 @@ export const useNotifications = () => {
         ...doc.data()
       })) as Notification[];
       
-      setNotifications(notificationsList);
+      // Sort the notifications after we've fetched them
+      const sortedNotifications = notificationsList.sort((a, b) => {
+        // Sort by expiration date descending
+        const expiresComparison = new Date(b.expiresAt).getTime() - new Date(a.expiresAt).getTime();
+        if (expiresComparison !== 0) return expiresComparison;
+        
+        // If expiration dates are the same, sort by creation date descending
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      setNotifications(sortedNotifications);
     } catch (error) {
       console.error('Erro ao buscar notificações:', error);
       toast({
@@ -118,7 +128,8 @@ export const useNotifications = () => {
       const notificationData = {
         ...notification,
         createdAt: new Date().toISOString(),
-        createdBy: user.uid
+        createdBy: user.uid,
+        read: false // Make sure the read field is explicitly set to false
       };
       
       const docRef = await addDoc(collection(db, 'notifications'), notificationData);
