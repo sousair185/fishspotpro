@@ -1,3 +1,4 @@
+
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { FishingSpot } from '@/types/spot';
 import { GoogleMap } from '@react-google-maps/api';
@@ -85,6 +86,9 @@ export const useGoogleMaps = ({
   }, [spots, onSpotClick]);
 
   const onLoad = useCallback((map: google.maps.Map) => {
+    // Set the mapId (important for advanced markers support)
+    map.mapId = 'k9b3mrCq5TOP665GkQDj90RNOoc=';
+    
     mapRef.current = map;
     
     // Check if there are URL parameters for shared location first

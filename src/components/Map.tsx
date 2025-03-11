@@ -196,7 +196,8 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     zoomControl: true,
     streetViewControl: true,
     mapTypeControl: true,
-    scaleControl: true
+    scaleControl: true,
+    mapId: 'k9b3mrCq5TOP665GkQDj90RNOoc='
   }), []);
 
   if (!isLoaded) return <div>Carregando mapa...</div>;
@@ -248,3 +249,4 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
 };
 
 export default Map;
+
