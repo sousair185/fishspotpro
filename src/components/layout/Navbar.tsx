@@ -1,14 +1,20 @@
 
 import { Link } from "react-router-dom";
-import { Map, Fish, UserCircle } from "lucide-react";
+import { Map, Fish, UserCircle, Settings } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
+  const { isAdmin } = useAuth();
+  
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-lg border-t border-border/50 px-6 py-2 z-50">
       <div className="max-w-screen-xl mx-auto">
         <div className="flex justify-around items-center">
           <NavLink to="/" icon={<Map size={24} />} label="Mapa" />
           <NavLink to="/spots" icon={<Fish size={24} />} label="Pontos" />
+          {isAdmin && (
+            <NavLink to="/admin" icon={<Settings size={24} />} label="Gerenciar" />
+          )}
           <NavLink to="/profile" icon={<UserCircle size={24} />} label="Perfil" />
         </div>
       </div>
