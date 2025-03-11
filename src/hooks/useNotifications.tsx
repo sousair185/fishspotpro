@@ -78,7 +78,7 @@ export const useNotifications = () => {
       // Query notifications that haven't expired yet
       const notificationsRef = collection(db, 'notifications');
       
-      // Create the query without the orderBy clause that was causing issues
+      // Create the query that gets notifications that haven't expired yet
       const q = query(
         notificationsRef,
         where('expiresAt', '>', now)
@@ -92,11 +92,16 @@ export const useNotifications = () => {
       
       // Sort the notifications after we've fetched them
       const sortedNotifications = notificationsList.sort((a, b) => {
-        // Sort by expiration date descending
-        const expiresComparison = new Date(b.expiresAt).getTime() - new Date(a.expiresAt).getTime();
-        if (expiresComparison !== 0) return expiresComparison;
+        // Sort by priority first
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        const priorityA = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+        const priorityB = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
         
-        // If expiration dates are the same, sort by creation date descending
+        if (priorityA !== priorityB) {
+          return priorityB - priorityA;
+        }
+        
+        // Then sort by creation date (newest first)
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
       
@@ -114,7 +119,7 @@ export const useNotifications = () => {
   };
 
   // Create a new notification (admin only)
-  const createNotification = async (notification: Omit<Notification, 'id' | 'createdAt' | 'createdBy'>) => {
+  const createNotification = async (notification: Omit<Notification, 'id' | 'createdAt' | 'createdBy' | 'read'>) => {
     if (!user || !isAdmin) {
       toast({
         title: 'Erro',
@@ -132,14 +137,14 @@ export const useNotifications = () => {
         read: false // Make sure the read field is explicitly set to false
       };
       
-      const docRef = await addDoc(collection(db, 'notifications'), notificationData);
+      await addDoc(collection(db, 'notifications'), notificationData);
       
       toast({
         title: 'Sucesso',
         description: 'Notificação criada com sucesso'
       });
       
-      fetchNotifications();
+      await fetchNotifications();
       return true;
     } catch (error) {
       console.error('Erro ao criar notificação:', error);
@@ -171,7 +176,7 @@ export const useNotifications = () => {
         description: 'Notificação excluída com sucesso'
       });
       
-      fetchNotifications();
+      await fetchNotifications();
       return true;
     } catch (error) {
       console.error('Erro ao excluir notificação:', error);
@@ -193,7 +198,7 @@ export const useNotifications = () => {
         read: true
       });
       
-      fetchNotifications();
+      await fetchNotifications();
       return true;
     } catch (error) {
       console.error('Erro ao marcar notificação como lida:', error);

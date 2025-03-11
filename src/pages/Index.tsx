@@ -4,6 +4,7 @@ import Navbar from "../components/layout/Navbar";
 import Map from "../components/Map";
 import { PopularSpots } from "@/components/spots/PopularSpots";
 import { FishingSpot } from "@/types/spot";
+import { NotificationBanner } from "@/components/notifications/NotificationBanner";
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
@@ -32,6 +33,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary to-background">
+      {/* Notification Banner */}
+      <NotificationBanner />
+      
       {/* Logo animado */}
       <div className={`fixed inset-0 flex items-center justify-center bg-background z-50 transition-all duration-500 ${loading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <img 

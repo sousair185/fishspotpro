@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Navbar from "../components/layout/Navbar";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,10 @@ import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/fire
 import { db } from '@/lib/firebase';
 import { FishingSpot } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, XCircle, AlertCircle, Bell } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Bell, Rocket } from 'lucide-react';
 import { NotificationManager } from '@/components/admin/NotificationManager';
+import { BoostManager } from '@/components/admin/BoostManager';
+import { NotificationBanner } from '@/components/notifications/NotificationBanner';
 
 const Admin = () => {
   const { user, isAdmin } = useAuth();
@@ -179,6 +182,7 @@ const Admin = () => {
           <p className="mb-2">{spot.description}</p>
           <p className="text-sm">Espécies: {spot.species.join(', ')}</p>
           <p className="text-sm">Coordenadas: {spot.coordinates[1]}, {spot.coordinates[0]}</p>
+          <p className="text-sm font-medium mt-1">ID: {spot.id}</p>
           
           {spot.images && spot.images.length > 0 && (
             <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
@@ -245,14 +249,17 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary to-background">
+      {/* Notification Banner */}
+      <NotificationBanner />
+      
       <main className="pb-20 px-6 pt-16">
         <header className="p-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Administração</h1>
-          <p className="text-muted-foreground">Gerencie spots e notificações do sistema</p>
+          <p className="text-muted-foreground">Gerencie spots, notificações e destaques do sistema</p>
         </header>
 
         <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="pending" className="relative">
               Spots Pendentes
               {pendingSpots && pendingSpots.length > 0 && (
@@ -267,6 +274,12 @@ const Admin = () => {
               <span className="flex items-center gap-1">
                 <Bell className="h-4 w-4" />
                 Notificações
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="boosts">
+              <span className="flex items-center gap-1">
+                <Rocket className="h-4 w-4" />
+                Destaques
               </span>
             </TabsTrigger>
           </TabsList>
@@ -297,6 +310,10 @@ const Admin = () => {
           
           <TabsContent value="notifications" className="mt-4">
             <NotificationManager />
+          </TabsContent>
+          
+          <TabsContent value="boosts" className="mt-4">
+            <BoostManager />
           </TabsContent>
         </Tabs>
       </main>
