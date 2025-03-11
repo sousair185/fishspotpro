@@ -1,6 +1,5 @@
 
 import { Suspense, useState, useEffect } from "react";
-import { Map as MapIcon } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Map from "../components/Map";
 import { PopularSpots } from "@/components/spots/PopularSpots";

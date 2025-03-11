@@ -1,4 +1,3 @@
-
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { FishingSpot } from '@/types/spot';
 import { GoogleMap } from '@react-google-maps/api';

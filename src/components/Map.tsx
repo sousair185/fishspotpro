@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { GoogleMap, useLoadScript, Marker, Libraries } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, Libraries } from '@react-google-maps/api';
 import { FishingSpot, initialSpots } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,7 +9,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import SpotForm from './spots/SpotForm';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getMarkerIcon } from '@/utils/markerUtils';
+import { createPinElement } from '@/utils/markerUtils';
 import { SpotInfoWindow } from './spots/SpotInfoWindow';
 import { MapControls } from './map/MapControls';
 
@@ -33,7 +33,7 @@ const getSavedUserLocation = (): { lat: number; lng: number } | null => {
   }
 };
 
-const libraries: Libraries = ['places', 'geometry'];
+const libraries: Libraries = ['places', 'geometry', 'marker'];
 
 interface MapProps {
   selectedSpotFromList?: FishingSpot | null;
@@ -49,6 +49,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
+  const [markers, setMarkers] = useState<google.maps.marker.AdvancedMarkerElement[]>([]);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
@@ -144,6 +145,40 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     }
   }, [selectedSpotFromList, isLoaded, centerOnCoordinates, setSelectedSpot, toast]);
 
+  // Effect to create advanced markers when spots or map changes
+  useEffect(() => {
+    if (isLoaded && mapRef.current && spots.length > 0) {
+      // Clean up any existing markers
+      markers.forEach(marker => marker.map = null);
+      
+      // Create new markers for each spot
+      const newMarkers = spots.map(spot => {
+        const pinElement = createPinElement(spot, isAdmin);
+        
+        const advancedMarker = new google.maps.marker.AdvancedMarkerElement({
+          position: { lat: spot.coordinates[1], lng: spot.coordinates[0] },
+          map: mapRef.current,
+          content: pinElement,
+          title: spot.name
+        });
+        
+        // Add click event listener
+        advancedMarker.addListener("click", () => {
+          setSelectedSpot(spot);
+        });
+        
+        return advancedMarker;
+      });
+      
+      setMarkers(newMarkers);
+      
+      // Cleanup function to remove markers when component unmounts
+      return () => {
+        newMarkers.forEach(marker => marker.map = null);
+      };
+    }
+  }, [spots, isLoaded, mapRef.current, isAdmin]);
+
   const handleLocationClick = useCallback(() => {
     centerOnUserLocation();
     toast({
@@ -176,15 +211,6 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
         onClick={handleMapClick}
         options={mapOptions}
       >
-        {spots.map((spot) => (
-          <Marker
-            key={spot.id}
-            position={{ lat: spot.coordinates[1], lng: spot.coordinates[0] }}
-            onClick={() => setSelectedSpot(spot)}
-            icon={getMarkerIcon(spot, isAdmin)}
-          />
-        ))}
-
         {selectedSpot && (
           <SpotInfoWindow 
             spot={selectedSpot} 
