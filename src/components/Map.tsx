@@ -1,38 +1,20 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { GoogleMap, useLoadScript, Libraries } from '@react-google-maps/api';
+import { useLoadScript, Libraries } from '@react-google-maps/api';
 import { FishingSpot, initialSpots } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, or } from 'firebase/firestore';
-import SpotForm from './spots/SpotForm';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createPinElement } from '@/utils/markerUtils';
-import { SpotInfoWindow } from './spots/SpotInfoWindow';
+import { useMarkers } from '@/hooks/useMarkers';
+import { getSavedUserLocation } from '@/utils/locationUtils';
+import { MapContainer } from './map/MapContainer';
 import { MapControls } from './map/MapControls';
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%',
-  borderRadius: '1rem'
-};
+import { SpotFormContainer } from './map/SpotFormContainer';
 
 const defaultCenter = { lat: -20.4206, lng: -49.9737 };
-
-const USER_LOCATION_KEY = 'lastUserLocation';
-
-const getSavedUserLocation = (): { lat: number; lng: number } | null => {
-  try {
-    const savedLocation = localStorage.getItem(USER_LOCATION_KEY);
-    return savedLocation ? JSON.parse(savedLocation) : null;
-  } catch (error) {
-    console.error('Error retrieving location from localStorage:', error);
-    return null;
-  }
-};
-
 const libraries: Libraries = ['places', 'geometry', 'marker'];
 
 interface MapProps {
@@ -49,7 +31,6 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
-  const [markers, setMarkers] = useState<google.maps.marker.AdvancedMarkerElement[]>([]);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
@@ -138,6 +119,9 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     }
   });
 
+  // Use the marker hook
+  useMarkers(spots, mapRef, isLoaded, isAdmin, (spot) => setSelectedSpot(spot));
+
   // Effect to handle centering the map on the selected spot from the list
   useEffect(() => {
     if (selectedSpotFromList && isLoaded && mapRef.current) {
@@ -156,40 +140,6 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
       });
     }
   }, [selectedSpotFromList, isLoaded, centerOnCoordinates, setSelectedSpot, toast]);
-
-  // Effect to create advanced markers when spots or map changes
-  useEffect(() => {
-    if (isLoaded && mapRef.current && spots.length > 0) {
-      // Clean up any existing markers
-      markers.forEach(marker => marker.map = null);
-      
-      // Create new markers for each spot
-      const newMarkers = spots.map(spot => {
-        const pinElement = createPinElement(spot, isAdmin);
-        
-        const advancedMarker = new google.maps.marker.AdvancedMarkerElement({
-          position: { lat: spot.coordinates[1], lng: spot.coordinates[0] },
-          map: mapRef.current,
-          content: pinElement,
-          title: spot.name
-        });
-        
-        // Add click event listener
-        advancedMarker.addListener("click", () => {
-          setSelectedSpot(spot);
-        });
-        
-        return advancedMarker;
-      });
-      
-      setMarkers(newMarkers);
-      
-      // Cleanup function to remove markers when component unmounts
-      return () => {
-        newMarkers.forEach(marker => marker.map = null);
-      };
-    }
-  }, [spots, isLoaded, mapRef.current, isAdmin]);
 
   const handleLocationClick = useCallback(() => {
     centerOnUserLocation();
@@ -216,26 +166,15 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
 
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden">
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        zoom={12}
-        center={mapCenter}
+      <MapContainer
+        mapCenter={mapCenter}
         onLoad={onLoad}
-        onClick={handleMapClick}
-        options={mapOptions}
-      >
-        {selectedSpot && (
-          <SpotInfoWindow 
-            spot={selectedSpot} 
-            isAdmin={isAdmin} 
-            onClose={() => setSelectedSpot(null)}
-            onLikeUpdate={() => {
-              queryClient.invalidateQueries({ queryKey: ['spots'] });
-              queryClient.invalidateQueries({ queryKey: ['popularSpots'] });
-            }}
-          />
-        )}
-      </GoogleMap>
+        handleMapClick={handleMapClick}
+        mapOptions={mapOptions}
+        selectedSpot={selectedSpot}
+        isAdmin={isAdmin}
+        onCloseInfoWindow={() => setSelectedSpot(null)}
+      />
 
       <MapControls
         onLocationClick={handleLocationClick}
@@ -244,18 +183,15 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
         isAdmin={isAdmin}
       />
 
-      {selectedCoordinates && user && (
-        <SpotForm
-          isOpen={true}
-          onClose={() => {
-            setSelectedCoordinates(null);
-            setAddingSpot(false);
-          }}
-          coordinates={selectedCoordinates}
-          onSpotAdded={handleSpotAdded}
-          userId={user.uid}
-        />
-      )}
+      <SpotFormContainer
+        selectedCoordinates={selectedCoordinates}
+        user={user}
+        onClose={() => {
+          setSelectedCoordinates(null);
+          setAddingSpot(false);
+        }}
+        onSpotAdded={handleSpotAdded}
+      />
     </div>
   );
 };
