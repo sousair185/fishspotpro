@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
@@ -94,6 +93,7 @@ const Spots = () => {
 
   // Função para navegar para o mapa e centralizar no spot
   const navigateToSpot = (spot: FishingSpot) => {
+    // Add a clean URL with proper parameters to ensure proper centering
     navigate(`/?lat=${spot.coordinates[1]}&lng=${spot.coordinates[0]}&spotId=${spot.id}`);
   };
 

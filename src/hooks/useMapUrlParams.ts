@@ -39,13 +39,16 @@ export const useMapUrlParams = ({
         if (spotId && spots.length > 0) {
           const sharedSpot = spots.find(spot => spot.id === spotId);
           if (sharedSpot && onSpotClick) {
-            onSpotClick(sharedSpot);
+            // Slight delay to ensure the map has centered before opening the info window
+            setTimeout(() => {
+              onSpotClick(sharedSpot);
+            }, 100);
           }
         }
+        
+        // Clean URL parameters after processing
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
-      
-      // Clean URL parameters after processing
-      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [spots, onSpotClick, mapRef, onCenterChanged]);
 };

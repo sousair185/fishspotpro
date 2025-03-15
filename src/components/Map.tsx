@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useLoadScript, Libraries } from '@react-google-maps/api';
 import { FishingSpot, initialSpots } from '@/types/spot';
@@ -118,6 +117,21 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
       setMapCenter(newCenter);
     }
   });
+
+  // Directly check URL parameters on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = urlParams.get('lat');
+    const lng = urlParams.get('lng');
+    
+    // If URL has coordinates, use them for initial center
+    if (lat && lng) {
+      setMapCenter({
+        lat: parseFloat(lat),
+        lng: parseFloat(lng)
+      });
+    }
+  }, []);
 
   // Use the marker hook
   useMarkers(spots, mapRef, isLoaded, isAdmin, (spot) => setSelectedSpot(spot));
