@@ -9,7 +9,8 @@ export interface FishingSpot {
   createdBy: string;
   createdAt: string;
   images?: string[];
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'private';
+  isPrivate?: boolean;
   reviewedBy?: string;
   reviewedAt?: string;
   likes: string[]; // Array of user IDs who liked
@@ -33,6 +34,7 @@ export const initialSpots: FishingSpot[] = [
     createdBy: 'sistema',
     createdAt: new Date().toISOString(),
     status: 'approved',
+    isPrivate: false,
     likes: [],
     likeCount: 0
   },
@@ -46,6 +48,7 @@ export const initialSpots: FishingSpot[] = [
     createdBy: 'sistema',
     createdAt: new Date().toISOString(),
     status: 'approved',
+    isPrivate: false,
     likes: [],
     likeCount: 0
   }

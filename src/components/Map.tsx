@@ -5,7 +5,7 @@ import { FishingSpot, initialSpots } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, or } from 'firebase/firestore';
 import SpotForm from './spots/SpotForm';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -57,15 +57,27 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   });
 
   const { data: fetchedSpots } = useQuery({
-    queryKey: ['spots'],
+    queryKey: ['spots', user?.uid],
     queryFn: async () => {
       const spotsCollection = collection(db, 'spots');
       
       let spotsSnapshot;
       
       if (isAdmin) {
+        // Admins veem todos os spots
         spotsSnapshot = await getDocs(spotsCollection);
+      } else if (user) {
+        // Usuários logados veem spots aprovados e seus próprios spots privados
+        spotsSnapshot = await getDocs(
+          query(spotsCollection, 
+            or(
+              where('status', '==', 'approved'),
+              where('createdBy', '==', user.uid)
+            )
+          )
+        );
       } else {
+        // Usuários não logados só veem spots aprovados
         spotsSnapshot = await getDocs(
           query(spotsCollection, where('status', '==', 'approved'))
         );
@@ -249,4 +261,3 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
 };
 
 export default Map;
-

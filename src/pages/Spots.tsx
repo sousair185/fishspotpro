@@ -14,9 +14,10 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Lock, Users } from "lucide-react";
 
 const Spots = () => {
-  const { user } = useAuth();
+  const { user, isVip } = useAuth();
 
   // Buscar spots do usuário
   const { data: userSpots, isLoading } = useQuery({
@@ -36,7 +37,11 @@ const Spots = () => {
     enabled: !!user
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, isPrivate?: boolean) => {
+    if (isPrivate || status === 'private') {
+      return 'bg-purple-100 text-purple-800';
+    }
+    
     switch (status) {
       case 'approved':
         return 'bg-green-100 text-green-800';
@@ -49,7 +54,11 @@ const Spots = () => {
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string, isPrivate?: boolean) => {
+    if (isPrivate || status === 'private') {
+      return 'Privado';
+    }
+    
     switch (status) {
       case 'approved':
         return 'Aprovado';
@@ -61,6 +70,9 @@ const Spots = () => {
         return 'Desconhecido';
     }
   };
+
+  // Contar spots privados
+  const privateSpots = userSpots?.filter(spot => spot.isPrivate).length || 0;
 
   if (!user) {
     return (
@@ -85,6 +97,22 @@ const Spots = () => {
         </header>
 
         <section className="px-6">
+          {!isLoading && privateSpots > 0 && (
+            <div className="mb-4 p-4 rounded-lg bg-purple-50 border border-purple-200">
+              <div className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-purple-500" />
+                <span className="font-medium">Spots Privativos: {privateSpots}/
+                  {isVip ? "∞" : "2"}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isVip 
+                  ? "Como usuário VIP, você pode adicionar quantos spots privativos quiser." 
+                  : "Usuários comuns podem adicionar até 2 spots privativos."}
+              </p>
+            </div>
+          )}
+          
           {isLoading ? (
             <div className="text-center py-8">Carregando seus spots...</div>
           ) : !userSpots || userSpots.length === 0 ? (
@@ -97,16 +125,17 @@ const Spots = () => {
                 <Card key={spot.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <CardTitle>{spot.name}</CardTitle>
-                        <CardDescription>
-                          Criado em: {new Date(spot.createdAt).toLocaleDateString()}
-                        </CardDescription>
+                        {spot.isPrivate && <Lock className="h-4 w-4 text-purple-500" />}
                       </div>
-                      <Badge className={getStatusColor(spot.status)}>
-                        {getStatusText(spot.status)}
+                      <Badge className={getStatusColor(spot.status, spot.isPrivate)}>
+                        {getStatusText(spot.status, spot.isPrivate)}
                       </Badge>
                     </div>
+                    <CardDescription>
+                      Criado em: {new Date(spot.createdAt).toLocaleDateString()}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p className="mb-2">{spot.description}</p>
@@ -125,15 +154,33 @@ const Spots = () => {
                       </div>
                     )}
 
-                    {spot.status === 'rejected' && (
+                    {spot.isPrivate && (
+                      <div className="mt-4 bg-purple-50 p-3 rounded-md text-purple-800 text-sm flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        <div>
+                          <strong>Spot Privativo:</strong> Este spot é visível apenas para você.
+                        </div>
+                      </div>
+                    )}
+
+                    {!spot.isPrivate && spot.status === 'rejected' && (
                       <div className="mt-4 bg-red-50 p-3 rounded-md text-red-800 text-sm">
                         <strong>Nota:</strong> Este spot foi rejeitado pela administração. Verifique as informações e tente cadastrar novamente.
                       </div>
                     )}
 
-                    {spot.status === 'pending' && (
+                    {!spot.isPrivate && spot.status === 'pending' && (
                       <div className="mt-4 bg-yellow-50 p-3 rounded-md text-yellow-800 text-sm">
                         <strong>Nota:</strong> Este spot está em análise e será visível no mapa após aprovação pela administração.
+                      </div>
+                    )}
+
+                    {!spot.isPrivate && spot.status === 'approved' && (
+                      <div className="mt-4 bg-green-50 p-3 rounded-md text-green-800 text-sm flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <div>
+                          <strong>Spot Público:</strong> Este spot é visível para todos os usuários.
+                        </div>
                       </div>
                     )}
                   </CardContent>

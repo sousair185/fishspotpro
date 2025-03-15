@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { FishingSpot } from '@/types/spot';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, canAddMoreSpots } from '@/lib/firebase';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,8 +36,21 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
   const [images, setImages] = useState<File[]>([]);
   const [agreement, setAgreement] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [canAddPrivateSpot, setCanAddPrivateSpot] = useState(true);
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isVip } = useAuth();
+
+  useEffect(() => {
+    const checkSpotLimit = async () => {
+      if (!isAdmin && !isVip) {
+        const canAdd = await canAddMoreSpots(userId);
+        setCanAddPrivateSpot(canAdd);
+      }
+    };
+    
+    checkSpotLimit();
+  }, [userId, isAdmin, isVip]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -58,6 +71,16 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
       toast({
         title: "Acordo necessário",
         description: "Você precisa concordar com os termos para continuar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verificar se o usuário pode adicionar um spot privado
+    if (isPrivate && !isAdmin && !isVip && !canAddPrivateSpot) {
+      toast({
+        title: "Limite atingido",
+        description: "Usuários comuns podem ter no máximo 2 spots privativos. Considere se tornar VIP para adicionar mais.",
         variant: "destructive"
       });
       return;
@@ -122,7 +145,8 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
         createdBy: userId,
         createdAt: new Date().toISOString(),
         images: imageUrls,
-        status: isAdmin ? 'approved' : 'pending',  // Spots criados por admins já são aprovados
+        status: isAdmin ? 'approved' : (isPrivate ? 'private' : 'pending'),  // Spots privados não precisam de aprovação
+        isPrivate: isPrivate,
         likes: [],
         likeCount: 0
       };
@@ -130,9 +154,18 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
       const docRef = await addDoc(collection(db, 'spots'), newSpot);
       onSpotAdded({ ...newSpot, id: docRef.id });
       
+      let toastMessage = "";
+      if (isAdmin) {
+        toastMessage = "Estabelecimento adicionado com sucesso.";
+      } else if (isPrivate) {
+        toastMessage = "Spot privado adicionado! Apenas você pode vê-lo.";
+      } else {
+        toastMessage = "Spot enviado para aprovação! Será revisado em breve.";
+      }
+      
       toast({
-        title: isAdmin ? "Estabelecimento adicionado!" : "Spot enviado para aprovação!",
-        description: isAdmin ? "O estabelecimento foi adicionado com sucesso." : "Seu spot foi enviado e será revisado em breve."
+        title: "Spot adicionado!",
+        description: toastMessage
       });
       
       onClose();
@@ -228,6 +261,32 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
             />
           </div>
 
+          {!isAdmin && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isPrivate"
+                checked={isPrivate}
+                onCheckedChange={(checked) => setIsPrivate(checked as boolean)}
+                disabled={!canAddPrivateSpot && !isVip}
+              />
+              <div>
+                <Label htmlFor="isPrivate" className="text-sm">
+                  Spot privativo (apenas para meu uso)
+                </Label>
+                {!canAddPrivateSpot && !isVip && (
+                  <p className="text-xs text-muted-foreground">
+                    Você atingiu o limite de 2 spots privativos. Torne-se VIP para adicionar mais.
+                  </p>
+                )}
+                {isVip && (
+                  <p className="text-xs text-yellow-600">
+                    Como VIP você pode adicionar mais spots privativos.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center space-x-2">
             <Checkbox
               id="agreement"
@@ -245,7 +304,7 @@ const SpotForm = ({ isOpen, onClose, coordinates, onSpotAdded, userId }: SpotFor
               Cancelar
             </Button>
             <Button type="submit" disabled={loading || !agreement}>
-              {loading ? "Salvando..." : isAdmin ? "Adicionar Estabelecimento" : "Enviar para aprovação"}
+              {loading ? "Salvando..." : isAdmin ? "Adicionar Estabelecimento" : (isPrivate ? "Adicionar Spot Privado" : "Enviar para aprovação")}
             </Button>
           </DialogFooter>
         </form>
