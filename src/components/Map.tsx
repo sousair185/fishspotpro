@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLoadScript, Libraries } from '@react-google-maps/api';
 import { FishingSpot, initialSpots } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, or } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMarkers } from '@/hooks/useMarkers';
@@ -12,6 +13,7 @@ import { getSavedUserLocation } from '@/utils/locationUtils';
 import { MapContainer } from './map/MapContainer';
 import { MapControls } from './map/MapControls';
 import { SpotFormContainer } from './map/SpotFormContainer';
+import { useSpotsData } from '@/hooks/useSpotsData';
 
 const defaultCenter = { lat: -20.4206, lng: -49.9737 };
 const libraries: Libraries = ['places', 'geometry', 'marker'];
@@ -24,7 +26,6 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   const savedLocation = getSavedUserLocation();
   const [mapCenter, setMapCenter] = useState(savedLocation || defaultCenter);
   
-  const [spots, setSpots] = useState<FishingSpot[]>(initialSpots);
   const [addingSpot, setAddingSpot] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState<[number, number] | null>(null);
   const { toast } = useToast();
@@ -36,43 +37,8 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     libraries: libraries
   });
 
-  const { data: fetchedSpots } = useQuery({
-    queryKey: ['spots', user?.uid],
-    queryFn: async () => {
-      const spotsCollection = collection(db, 'spots');
-      
-      let spotsSnapshot;
-      
-      if (isAdmin) {
-        // Admins veem todos os spots
-        spotsSnapshot = await getDocs(spotsCollection);
-      } else if (user) {
-        // Usuários logados veem spots aprovados e seus próprios spots privados
-        spotsSnapshot = await getDocs(
-          query(spotsCollection, 
-            or(
-              where('status', '==', 'approved'),
-              where('createdBy', '==', user.uid)
-            )
-          )
-        );
-      } else {
-        // Usuários não logados só veem spots aprovados
-        spotsSnapshot = await getDocs(
-          query(spotsCollection, where('status', '==', 'approved'))
-        );
-      }
-      
-      const spotsData = spotsSnapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-      })) as FishingSpot[];
-      
-      setSpots([...initialSpots, ...spotsData]);
-      return spotsData;
-    },
-    enabled: isLoaded
-  });
+  // Use our extracted hook for fetching spots data
+  const { spots, setSpots } = useSpotsData(user, isAdmin, isLoaded, initialSpots);
 
   const handleSpotAdded = (newSpot: FishingSpot) => {
     if (isAdmin || newSpot.status === 'approved') {
@@ -118,7 +84,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     }
   });
 
-  // Directly check URL parameters on component mount
+  // Check URL parameters on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const lat = urlParams.get('lat');
@@ -155,27 +121,6 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     }
   }, [selectedSpotFromList, isLoaded, centerOnCoordinates, setSelectedSpot, toast]);
 
-  const handleLocationClick = useCallback(() => {
-    centerOnUserLocation();
-    toast({
-      title: "Localizando",
-      description: "Buscando sua localização...",
-    });
-  }, [centerOnUserLocation, toast]);
-
-  const toggleAddingSpot = useCallback(() => {
-    setAddingSpot(!addingSpot);
-  }, [addingSpot]);
-
-  const mapOptions = useMemo(() => ({
-    mapTypeId: 'roadmap',
-    zoomControl: true,
-    streetViewControl: true,
-    mapTypeControl: true,
-    scaleControl: true,
-    mapId: 'k9b3mrCq5TOP665GkQDj90RNOoc='
-  }), []);
-
   if (!isLoaded) return <div>Carregando mapa...</div>;
 
   return (
@@ -184,16 +129,29 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
         mapCenter={mapCenter}
         onLoad={onLoad}
         handleMapClick={handleMapClick}
-        mapOptions={mapOptions}
+        mapOptions={{
+          mapTypeId: 'roadmap',
+          zoomControl: true,
+          streetViewControl: true,
+          mapTypeControl: true,
+          scaleControl: true,
+          mapId: 'k9b3mrCq5TOP665GkQDj90RNOoc='
+        }}
         selectedSpot={selectedSpot}
         isAdmin={isAdmin}
         onCloseInfoWindow={() => setSelectedSpot(null)}
       />
 
       <MapControls
-        onLocationClick={handleLocationClick}
+        onLocationClick={() => {
+          centerOnUserLocation();
+          toast({
+            title: "Localizando",
+            description: "Buscando sua localização...",
+          });
+        }}
         addingSpot={addingSpot}
-        toggleAddingSpot={toggleAddingSpot}
+        toggleAddingSpot={() => setAddingSpot(!addingSpot)}
         isAdmin={isAdmin}
       />
 
