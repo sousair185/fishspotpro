@@ -1,8 +1,8 @@
 
-import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
+import { useState, useEffect, useRef } from 'react';
+import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Notification } from '@/types/notification';
+import { Notification, WeatherData } from '@/types/notification';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 
@@ -14,6 +14,23 @@ export const useNotifications = () => {
   const [moonPhase, setMoonPhase] = useState<{ phase: string; influence: string }>({ 
     phase: '', 
     influence: '' 
+  });
+  const [weatherData, setWeatherData] = useState<WeatherData>({
+    pressure: 1013.25, // Default sea level pressure in hPa
+    trend: 'stable',
+    fishingCondition: 'Moderada',
+    description: 'Condições estáveis de pesca'
+  });
+  
+  // Interval references for cleanup
+  const intervalRefs = useRef<{
+    moon: NodeJS.Timeout | null,
+    weather: NodeJS.Timeout | null,
+    notifications: NodeJS.Timeout | null
+  }>({
+    moon: null,
+    weather: null,
+    notifications: null
   });
 
   // Fetch moon phase information
@@ -62,6 +79,77 @@ export const useNotifications = () => {
       setMoonPhase({ phase, influence });
     } catch (error) {
       console.error('Erro ao obter fase da lua:', error);
+    }
+  };
+
+  // Fetch weather data (simulated for now - would be replaced with actual API call)
+  const fetchWeatherData = async () => {
+    try {
+      // Simulate pressure changes for demonstration
+      const now = new Date();
+      const hour = now.getHours();
+      
+      // Simulate pressure changes throughout the day
+      const basePressure = 1013.25;
+      const hourlyVariation = Math.sin((hour / 24) * 2 * Math.PI) * 3;
+      const randomVariation = (Math.random() - 0.5) * 2; // Random variation between -1 and 1
+      
+      const currentPressure = basePressure + hourlyVariation + randomVariation;
+      
+      // Determine trend (simplified)
+      let trend: 'rising' | 'falling' | 'stable';
+      if (hourlyVariation > 0.5) trend = 'rising';
+      else if (hourlyVariation < -0.5) trend = 'falling';
+      else trend = 'stable';
+      
+      // Determine fishing conditions based on pressure and trend
+      let fishingCondition = '';
+      let description = '';
+      
+      if (currentPressure > 1018) {
+        if (trend === 'rising') {
+          fishingCondition = 'Boa a Excelente';
+          description = 'Pressão alta e aumentando favorece a alimentação dos peixes';
+        } else if (trend === 'falling') {
+          fishingCondition = 'Muito Boa';
+          description = 'Pressão alta começando a cair é ideal para a atividade dos peixes';
+        } else {
+          fishingCondition = 'Boa';
+          description = 'Pressão alta estável geralmente mantém os peixes ativos';
+        }
+      } else if (currentPressure < 1008) {
+        if (trend === 'rising') {
+          fishingCondition = 'Melhorando';
+          description = 'Pressão baixa subindo pode aumentar a atividade dos peixes';
+        } else if (trend === 'falling') {
+          fishingCondition = 'Ruim a Moderada';
+          description = 'Pressão baixa e caindo reduz a atividade dos peixes';
+        } else {
+          fishingCondition = 'Moderada';
+          description = 'Pressão baixa estável mantém os peixes menos ativos';
+        }
+      } else {
+        if (trend === 'rising') {
+          fishingCondition = 'Boa';
+          description = 'Pressão normal subindo favorece a pesca';
+        } else if (trend === 'falling') {
+          fishingCondition = 'Moderada a Boa';
+          description = 'Pressão normal caindo é favorável para muitas espécies';
+        } else {
+          fishingCondition = 'Moderada';
+          description = 'Condições estáveis são geralmente previsíveis para pesca';
+        }
+      }
+      
+      setWeatherData({
+        pressure: +currentPressure.toFixed(1),
+        trend,
+        fishingCondition,
+        description
+      });
+      
+    } catch (error) {
+      console.error('Erro ao obter dados meteorológicos:', error);
     }
   };
 
@@ -207,18 +295,21 @@ export const useNotifications = () => {
   };
 
   useEffect(() => {
+    // Initial fetches
     fetchMoonPhase();
+    fetchWeatherData();
     fetchNotifications();
     
-    // Refresh moon phase daily
-    const moonInterval = setInterval(fetchMoonPhase, 24 * 60 * 60 * 1000);
+    // Set up intervals for periodic updates
+    intervalRefs.current.moon = setInterval(fetchMoonPhase, 24 * 60 * 60 * 1000); // Daily
+    intervalRefs.current.weather = setInterval(fetchWeatherData, 60 * 60 * 1000); // Hourly
+    intervalRefs.current.notifications = setInterval(fetchNotifications, 5 * 60 * 1000); // Every 5 minutes
     
-    // Refresh notifications every 5 minutes to check for expired ones
-    const notificationsInterval = setInterval(fetchNotifications, 5 * 60 * 1000);
-    
+    // Cleanup function
     return () => {
-      clearInterval(moonInterval);
-      clearInterval(notificationsInterval);
+      if (intervalRefs.current.moon) clearInterval(intervalRefs.current.moon);
+      if (intervalRefs.current.weather) clearInterval(intervalRefs.current.weather);
+      if (intervalRefs.current.notifications) clearInterval(intervalRefs.current.notifications);
     };
   }, [user]);
 
@@ -226,6 +317,7 @@ export const useNotifications = () => {
     notifications,
     loading,
     moonPhase,
+    weatherData,
     createNotification,
     deleteNotification,
     markAsRead,

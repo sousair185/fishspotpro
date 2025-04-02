@@ -16,7 +16,18 @@ export const useMarkers = (
   // Effect to create advanced markers when spots or map changes
   useEffect(() => {
     // Only proceed if Google Maps is loaded, map reference is available, and spots exist
-    if (!isLoaded || !mapRef.current || !spots.length || !window.google?.maps?.marker) {
+    if (!isLoaded || !mapRef.current || !spots.length) {
+      console.log('Markers not created: conditions not met', { 
+        isLoaded, 
+        mapExists: !!mapRef.current, 
+        spotsCount: spots.length 
+      });
+      return () => {};
+    }
+    
+    // Wait for Advanced Marker functionality to be available
+    if (!window.google?.maps?.marker) {
+      console.log('Advanced Marker not available yet');
       return () => {};
     }
     
@@ -28,10 +39,16 @@ export const useMarkers = (
     });
     
     try {
+      console.log('Creating markers for spots:', spots.length);
       // Create new markers for each spot
       const newMarkers = spots.map(spot => {
         try {
           const pinElement = createPinElement(spot, isAdmin);
+          
+          if (!pinElement) {
+            console.error('Failed to create pin element for spot:', spot.name);
+            return null;
+          }
           
           // Make sure google.maps.marker.AdvancedMarkerElement is available
           if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
@@ -44,20 +61,25 @@ export const useMarkers = (
             
             // Use 'gmp-click' event instead of 'click' for Advanced Markers
             advancedMarker.addEventListener("gmp-click", () => {
+              console.log('Marker clicked:', spot.name);
               onSpotClick(spot);
             });
             
             return advancedMarker;
+          } else {
+            console.error('AdvancedMarkerElement not available');
+            return null;
           }
         } catch (error) {
           console.error(`Error creating marker for spot ${spot.name}:`, error);
+          return null;
         }
-        return null;
       }).filter(Boolean) as google.maps.marker.AdvancedMarkerElement[];
       
       // Update the ref first, then the state to avoid continuous re-renders
       markersRef.current = newMarkers;
       setMarkers(newMarkers);
+      console.log('Created markers:', newMarkers.length);
       
       // Cleanup function to remove markers when component unmounts
       return () => {
@@ -71,7 +93,7 @@ export const useMarkers = (
       console.error("Error creating markers:", error);
       return () => {};
     }
-  }, [spots, isLoaded, isAdmin, onSpotClick]); // Removed mapRef.current from dependencies
+  }, [spots, isLoaded, isAdmin, onSpotClick]); // Removed mapRef.current to prevent infinite renders
 
   return { markers: markersRef.current };
 };
