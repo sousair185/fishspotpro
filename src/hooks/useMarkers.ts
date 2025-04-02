@@ -37,8 +37,8 @@ export const useMarkers = (
               title: spot.name
             });
             
-            // Add click event listener
-            advancedMarker.addListener("click", () => {
+            // Use 'gmp-click' event instead of 'click' for Advanced Markers
+            advancedMarker.addEventListener("gmp-click", () => {
               onSpotClick(spot);
             });
             
