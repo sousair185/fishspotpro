@@ -98,18 +98,6 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     }
   }, []);
 
-  // Only initialize markers when map is fully loaded
-  const showMarkers = isLoaded && mapRef.current !== null && !loadError;
-  
-  // Use the marker hook with conditional execution
-  useMarkers(
-    showMarkers ? spots : [], 
-    mapRef, 
-    isLoaded && !!window.google?.maps?.marker, 
-    isAdmin, 
-    (spot) => setSelectedSpot(spot)
-  );
-
   // Effect to handle centering the map on the selected spot from the list
   useEffect(() => {
     if (selectedSpotFromList && isLoaded && mapRef.current) {
@@ -132,20 +120,23 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   if (loadError) return <div>Erro ao carregar o mapa. Tente novamente mais tarde.</div>;
   if (!isLoaded) return <div>Carregando mapa...</div>;
 
+  // Define the Google Maps options with stable values to prevent re-renders
+  const mapOptions = {
+    mapTypeId: 'roadmap',
+    zoomControl: true,
+    streetViewControl: true,
+    mapTypeControl: true,
+    scaleControl: true,
+    mapId: 'k9b3mrCq5TOP665GkQDj90RNOoc='
+  };
+
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden">
       <MapContainer
         mapCenter={mapCenter}
         onLoad={onLoad}
         handleMapClick={handleMapClick}
-        mapOptions={{
-          mapTypeId: 'roadmap',
-          zoomControl: true,
-          streetViewControl: true,
-          mapTypeControl: true,
-          scaleControl: true,
-          mapId: 'k9b3mrCq5TOP665GkQDj90RNOoc='
-        }}
+        mapOptions={mapOptions}
         selectedSpot={selectedSpot}
         isAdmin={isAdmin}
         onCloseInfoWindow={() => setSelectedSpot(null)}

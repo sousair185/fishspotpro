@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { GoogleMap } from '@react-google-maps/api';
 import { SpotInfoWindow } from '../spots/SpotInfoWindow';
 import { FishingSpot } from '@/types/spot';
@@ -21,7 +21,8 @@ interface MapContainerProps {
   onCloseInfoWindow: () => void;
 }
 
-export const MapContainer: React.FC<MapContainerProps> = ({
+// Use React.memo to prevent unnecessary re-renders
+export const MapContainer = memo(({
   mapCenter,
   onLoad,
   handleMapClick,
@@ -29,7 +30,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   selectedSpot,
   isAdmin,
   onCloseInfoWindow
-}) => {
+}: MapContainerProps) => {
   const queryClient = useQueryClient();
 
   return (
@@ -54,4 +55,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       )}
     </GoogleMap>
   );
-};
+});
+
+MapContainer.displayName = 'MapContainer';
