@@ -1,4 +1,5 @@
-import { useRef, useState, useCallback } from 'react';
+
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { FishingSpot } from '@/types/spot';
 import { useMapUrlParams } from './useMapUrlParams';
 import { useMapInteractions } from './useMapInteractions';
@@ -38,7 +39,8 @@ export const useGoogleMaps = ({
   const {
     handleMapClick,
     centerOnCoordinates,
-    centerOnUserLocation
+    centerOnUserLocation,
+    userLocation
   } = useMapInteractions({
     mapRef,
     isAddingMode,
@@ -85,6 +87,7 @@ export const useGoogleMaps = ({
     setSelectedSpot,
     mapRef,
     centerOnUserLocation,
-    centerOnCoordinates
+    centerOnCoordinates,
+    userLocation
   };
 };

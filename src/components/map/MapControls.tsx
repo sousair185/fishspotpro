@@ -8,13 +8,15 @@ interface MapControlsProps {
   addingSpot: boolean;
   toggleAddingSpot: () => void;
   isAdmin: boolean;
+  userLocation: { lat: number; lng: number } | null;
 }
 
 export function MapControls({ 
   onLocationClick, 
   addingSpot, 
   toggleAddingSpot, 
-  isAdmin 
+  isAdmin,
+  userLocation
 }: MapControlsProps) {
   return (
     <>
@@ -24,10 +26,17 @@ export function MapControls({
           size="sm"
           onClick={toggleAddingSpot}
           className="shadow-lg"
+          disabled={!userLocation && !isAdmin}
+          title={!userLocation && !isAdmin ? "Ative sua localização para adicionar spots" : ""}
         >
           {addingSpot ? "Cancelar" : <Plus className="mr-2" />}
           {addingSpot ? "Clique no mapa para adicionar" : isAdmin ? "Adicionar Local" : "Adicionar Spot"}
         </Button>
+        {!userLocation && !isAdmin && (
+          <div className="text-xs bg-background/80 p-2 rounded-md shadow">
+            Ative sua localização para adicionar spots
+          </div>
+        )}
       </div>
 
       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
@@ -40,6 +49,14 @@ export function MapControls({
           <Navigation className="h-4 w-4" />
         </Button>
       </div>
+
+      {userLocation && (
+        <div className="absolute bottom-16 left-4 z-10 bg-background/80 p-2 rounded-md shadow text-xs">
+          <p>Sua localização atual:</p>
+          <p>Lat: {userLocation.lat.toFixed(6)}</p>
+          <p>Lng: {userLocation.lng.toFixed(6)}</p>
+        </div>
+      )}
     </>
   );
 }

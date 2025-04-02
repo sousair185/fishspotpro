@@ -58,7 +58,8 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     setSelectedSpot,
     mapRef,
     centerOnUserLocation,
-    centerOnCoordinates
+    centerOnCoordinates,
+    userLocation
   } = useGoogleMaps({
     initialCenter,
     initialZoom: 12,
@@ -153,6 +154,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
         addingSpot={addingSpot}
         toggleAddingSpot={() => setAddingSpot(!addingSpot)}
         isAdmin={isAdmin}
+        userLocation={userLocation}
       />
 
       <SpotFormContainer
@@ -163,6 +165,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
           setAddingSpot(false);
         }}
         onSpotAdded={handleSpotAdded}
+        userLocation={userLocation}
       />
     </div>
   );
