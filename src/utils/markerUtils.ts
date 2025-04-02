@@ -1,3 +1,4 @@
+
 import { FishingSpot } from '@/types/spot';
 
 export function createPinElement(spot: FishingSpot, isAdmin: boolean) {
@@ -33,19 +34,28 @@ export function createPinElement(spot: FishingSpot, isAdmin: boolean) {
       </svg>`;
   }
   
-  // Create the pin element
-  const pinElement = document.createElement('div');
-  pinElement.innerHTML = svgContent;
-  pinElement.style.cursor = 'pointer';
-  
-  // Extract SVG element from the div
-  const svgElement = pinElement.firstElementChild as SVGElement;
-  
-  return svgElement;
+  try {
+    // Create the pin element
+    const pinElement = document.createElement('div');
+    pinElement.innerHTML = svgContent;
+    pinElement.style.cursor = 'pointer';
+    
+    // Extract SVG element from the div
+    const svgElement = pinElement.firstElementChild as SVGElement;
+    
+    return svgElement;
+  } catch (error) {
+    console.error("Error creating pin element:", error);
+    return document.createElement('div'); // Return a fallback element
+  }
 }
 
 export function getMarkerIcon(spot: FishingSpot, isAdmin: boolean) {
   const isBoosted = spot.boosted && new Date(spot.boosted.endDate) > new Date();
+  
+  if (!window.google || !google.maps) {
+    return undefined;
+  }
   
   if (isBoosted) {
     return {

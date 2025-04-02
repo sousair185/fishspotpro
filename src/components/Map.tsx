@@ -4,7 +4,6 @@ import { useLoadScript, Libraries } from '@react-google-maps/api';
 import { FishingSpot, initialSpots } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { collection, getDocs, query, where, or } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -32,7 +31,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
 
-  const { isLoaded } = useLoadScript({
+  const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
     libraries: libraries
   });
@@ -99,8 +98,17 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     }
   }, []);
 
-  // Use the marker hook
-  useMarkers(spots, mapRef, isLoaded, isAdmin, (spot) => setSelectedSpot(spot));
+  // Only initialize markers when map is fully loaded
+  const showMarkers = isLoaded && mapRef.current !== null && !loadError;
+  
+  // Use the marker hook with conditional execution
+  useMarkers(
+    showMarkers ? spots : [], 
+    mapRef, 
+    isLoaded && !!window.google?.maps?.marker, 
+    isAdmin, 
+    (spot) => setSelectedSpot(spot)
+  );
 
   // Effect to handle centering the map on the selected spot from the list
   useEffect(() => {
@@ -121,6 +129,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     }
   }, [selectedSpotFromList, isLoaded, centerOnCoordinates, setSelectedSpot, toast]);
 
+  if (loadError) return <div>Erro ao carregar o mapa. Tente novamente mais tarde.</div>;
   if (!isLoaded) return <div>Carregando mapa...</div>;
 
   return (

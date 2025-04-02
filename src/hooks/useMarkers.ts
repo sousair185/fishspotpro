@@ -14,36 +14,56 @@ export const useMarkers = (
 
   // Effect to create advanced markers when spots or map changes
   useEffect(() => {
-    if (isLoaded && mapRef.current && spots.length > 0) {
+    // Only proceed if Google Maps is loaded, map reference is available, and spots exist
+    if (isLoaded && mapRef.current && spots.length > 0 && window.google?.maps?.marker) {
       // Clean up any existing markers
-      markers.forEach(marker => marker.map = null);
-      
-      // Create new markers for each spot
-      const newMarkers = spots.map(spot => {
-        const pinElement = createPinElement(spot, isAdmin);
-        
-        const advancedMarker = new google.maps.marker.AdvancedMarkerElement({
-          position: { lat: spot.coordinates[1], lng: spot.coordinates[0] },
-          map: mapRef.current,
-          content: pinElement,
-          title: spot.name
-        });
-        
-        // Add click event listener
-        advancedMarker.addListener("click", () => {
-          onSpotClick(spot);
-        });
-        
-        return advancedMarker;
+      markers.forEach(marker => {
+        if (marker) {
+          marker.map = null;
+        }
       });
       
-      setMarkers(newMarkers);
-      
-      // Cleanup function to remove markers when component unmounts
-      return () => {
-        newMarkers.forEach(marker => marker.map = null);
-      };
+      try {
+        // Create new markers for each spot
+        const newMarkers = spots.map(spot => {
+          const pinElement = createPinElement(spot, isAdmin);
+          
+          // Make sure google.maps.marker.AdvancedMarkerElement is available
+          if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
+            const advancedMarker = new google.maps.marker.AdvancedMarkerElement({
+              position: { lat: spot.coordinates[1], lng: spot.coordinates[0] },
+              map: mapRef.current,
+              content: pinElement,
+              title: spot.name
+            });
+            
+            // Add click event listener
+            advancedMarker.addListener("click", () => {
+              onSpotClick(spot);
+            });
+            
+            return advancedMarker;
+          }
+          return null;
+        }).filter(Boolean) as google.maps.marker.AdvancedMarkerElement[];
+        
+        setMarkers(newMarkers);
+        
+        // Cleanup function to remove markers when component unmounts
+        return () => {
+          newMarkers.forEach(marker => {
+            if (marker) {
+              marker.map = null;
+            }
+          });
+        };
+      } catch (error) {
+        console.error("Error creating markers:", error);
+        return () => {};
+      }
     }
+    
+    return () => {}; // Empty cleanup function for when conditions aren't met
   }, [spots, isLoaded, mapRef.current, isAdmin, onSpotClick]);
 
   return { markers };
