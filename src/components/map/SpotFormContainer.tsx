@@ -3,6 +3,7 @@ import React from 'react';
 import SpotForm from '../spots/SpotForm';
 import { FishingSpot } from '@/types/spot';
 import { FirebaseUser } from '@/types/user';
+import { Button } from '@/components/ui/button';
 
 interface SpotFormContainerProps {
   selectedCoordinates: [number, number] | null;
@@ -34,7 +35,7 @@ export const SpotFormContainer: React.FC<SpotFormContainerProps> = ({
   };
 
   // Se o usuário não é admin, verifica a distância
-  if (!isWithinRange() && !user.isAdmin) {
+  if (!isWithinRange() && !(user.isAdmin || user.role === 'admin')) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
         <div className="bg-card p-6 rounded-lg shadow-lg w-80">
@@ -60,6 +61,3 @@ export const SpotFormContainer: React.FC<SpotFormContainerProps> = ({
     />
   );
 };
-
-// Importação necessária para o componente Button
-import { Button } from '@/components/ui/button';

@@ -35,12 +35,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      
-      // Verificar os roles do usuário
       if (currentUser) {
+        // Verificar os roles do usuário
         const adminStatus = await isUserAdmin(currentUser.uid);
         setIsAdmin(adminStatus);
+        
+        // Extend currentUser with custom properties
+        const extendedUser = currentUser as unknown as User & { isAdmin: boolean };
+        extendedUser.isAdmin = adminStatus;
+        setUser(extendedUser);
         
         // Verificar se é VIP
         if (!adminStatus) {
@@ -51,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsVip(true);
         }
       } else {
+        setUser(null);
         setIsAdmin(false);
         setIsVip(false);
       }
