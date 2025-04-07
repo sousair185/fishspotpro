@@ -1,5 +1,4 @@
-
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useCallback } from 'react';
 import { FishingSpot } from '@/types/spot';
 import { useMapUrlParams } from './useMapUrlParams';
 import { useMapInteractions } from './useMapInteractions';
@@ -25,15 +24,6 @@ export const useGoogleMaps = ({
   onCenterChanged
 }: UseGoogleMapsProps) => {
   const mapRef = useRef<google.maps.Map | null>(null);
-  const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
-
-  // Use the URL parameters hook
-  useMapUrlParams({
-    mapRef,
-    spots,
-    onSpotClick,
-    onCenterChanged
-  });
 
   // Use the map interactions hook
   const {
@@ -47,6 +37,14 @@ export const useGoogleMaps = ({
     onMapClick,
     onCenterChanged,
     spots
+  });
+
+  // Use the URL parameters hook
+  useMapUrlParams({
+    mapRef,
+    spots,
+    onSpotClick,
+    onCenterChanged
   });
 
   const onLoad = useCallback((map: google.maps.Map) => {
@@ -83,8 +81,6 @@ export const useGoogleMaps = ({
   return {
     onLoad,
     handleMapClick,
-    selectedSpot,
-    setSelectedSpot,
     mapRef,
     centerOnUserLocation,
     centerOnCoordinates,
