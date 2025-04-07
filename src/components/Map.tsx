@@ -50,6 +50,17 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
 
   const initialCenter = useMemo(() => [mapCenter.lng, mapCenter.lat] as [number, number], [mapCenter.lng, mapCenter.lat]);
   
+  // Use spot selection hook
+  const { selectedSpot, setSelectedSpot } = useSpotSelection({
+    selectedSpotFromList,
+    centerOnCoordinates: (coords) => {
+      if (isLoaded && onLoad.current) {
+        centerOnCoordinates(coords);
+      }
+    },
+    isLoaded
+  });
+  
   // Initialize Google Maps and get the mapRef
   const {
     onLoad,
@@ -63,6 +74,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     initialZoom: 12,
     spots,
     onSpotClick: (spot) => {
+      console.log("Spot clicked from Google Maps:", spot.name);
       setSelectedSpot(spot);
     },
     onMapClick: (coordinates) => {
@@ -82,15 +94,9 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     onCenterChanged: handleCenterChange
   });
 
-  // Use spot selection hook
-  const { selectedSpot, setSelectedSpot } = useSpotSelection({
-    selectedSpotFromList,
-    centerOnCoordinates,
-    isLoaded
-  });
-
   // Now use markers with the initialized mapRef
   const { markers } = useMarkers(spots, mapRef, isLoaded, isAdmin, (spot) => {
+    console.log("Spot selected from marker:", spot.name);
     setSelectedSpot(spot);
   });
 
@@ -98,6 +104,11 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   useEffect(() => {
     checkUrlParams();
   }, [checkUrlParams]);
+
+  // Debug logs for spot selection
+  useEffect(() => {
+    console.log("Selected spot changed:", selectedSpot?.name);
+  }, [selectedSpot]);
 
   const handleSpotAdded = (newSpot: FishingSpot) => {
     if (isAdmin || newSpot.status === 'approved') {

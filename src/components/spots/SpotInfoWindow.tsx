@@ -15,6 +15,8 @@ interface SpotInfoWindowProps {
 }
 
 export function SpotInfoWindow({ spot, isAdmin, onClose, onLikeUpdate }: SpotInfoWindowProps) {
+  console.log("Rendering InfoWindow for spot:", spot.name);
+  
   return (
     <InfoWindow
       position={{ lat: spot.coordinates[1], lng: spot.coordinates[0] }}
@@ -49,7 +51,7 @@ export function SpotInfoWindow({ spot, isAdmin, onClose, onLikeUpdate }: SpotInf
           </div>
         )}
 
-        {spot.images && (
+        {spot.images && spot.images.length > 0 && (
           <div className="mt-2 flex gap-2">
             {spot.images.map((url, index) => (
               <img

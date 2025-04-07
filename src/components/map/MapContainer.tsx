@@ -32,6 +32,8 @@ export const MapContainer = memo(({
   onCloseInfoWindow
 }: MapContainerProps) => {
   const queryClient = useQueryClient();
+  
+  console.log("MapContainer render, selectedSpot:", selectedSpot?.name);
 
   return (
     <GoogleMap

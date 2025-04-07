@@ -24,6 +24,7 @@ export const useGoogleMaps = ({
   onCenterChanged
 }: UseGoogleMapsProps) => {
   const mapRef = useRef<google.maps.Map | null>(null);
+  const onLoad = useRef<boolean>(false);
 
   // Use the map interactions hook
   const {
@@ -47,8 +48,10 @@ export const useGoogleMaps = ({
     onCenterChanged
   });
 
-  const onLoad = useCallback((map: google.maps.Map) => {
+  const handleMapLoad = useCallback((map: google.maps.Map) => {
+    console.log("Map loaded");
     mapRef.current = map;
+    onLoad.current = true;
     
     // Check if there are URL parameters for shared location first
     const urlParams = new URLSearchParams(window.location.search);
@@ -79,11 +82,12 @@ export const useGoogleMaps = ({
   }, [onCenterChanged]);
 
   return {
-    onLoad,
+    onLoad: handleMapLoad,
     handleMapClick,
     mapRef,
     centerOnUserLocation,
     centerOnCoordinates,
-    userLocation
+    userLocation,
+    onLoad
   };
 };

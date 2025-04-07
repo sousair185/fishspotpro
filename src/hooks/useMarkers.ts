@@ -26,20 +26,61 @@ export const useMarkers = (
     
     // Wait for Advanced Marker functionality to be available
     if (!window.google?.maps?.marker) {
-      console.log('Advanced Marker not available yet');
-      return () => {};
+      console.log('Advanced Marker not available yet, using fallback markers');
+      
+      // Clean up any existing markers
+      markersRef.current.forEach(marker => {
+        if (marker) {
+          marker.map = null;
+        }
+      });
+      markersRef.current = [];
+      
+      // Use regular markers as fallback when Advanced Markers are not available
+      const newMarkers = spots.map(spot => {
+        try {
+          if (window.google && google.maps && google.maps.Marker) {
+            const marker = new google.maps.Marker({
+              position: { lat: spot.coordinates[1], lng: spot.coordinates[0] },
+              map: mapRef.current,
+              title: spot.name
+            });
+            
+            marker.addListener("click", () => {
+              console.log('Regular marker clicked:', spot.name);
+              onSpotClick(spot);
+            });
+            
+            return marker as unknown as google.maps.marker.AdvancedMarkerElement;
+          }
+          return null;
+        } catch (error) {
+          console.error(`Error creating fallback marker for spot ${spot.name}:`, error);
+          return null;
+        }
+      }).filter(Boolean) as google.maps.marker.AdvancedMarkerElement[];
+      
+      markersRef.current = newMarkers;
+      
+      return () => {
+        newMarkers.forEach(marker => {
+          if (marker) {
+            marker.map = null;
+          }
+        });
+      };
     }
     
-    // Clean up any existing markers
-    markersRef.current.forEach(marker => {
-      if (marker) {
-        marker.map = null;
-      }
-    });
-    markersRef.current = [];
-    
     try {
-      console.log('Creating markers for spots:', spots.length);
+      console.log('Creating advanced markers for spots:', spots.length);
+      
+      // Clean up any existing markers
+      markersRef.current.forEach(marker => {
+        if (marker) {
+          marker.map = null;
+        }
+      });
+      markersRef.current = [];
       
       // Create new markers for each spot
       const newMarkers = spots.map(spot => {
@@ -62,7 +103,7 @@ export const useMarkers = (
             
             // Use 'gmp-click' event instead of 'click' for Advanced Markers
             advancedMarker.addEventListener("gmp-click", () => {
-              console.log('Marker clicked:', spot.name);
+              console.log('Advanced marker clicked:', spot.name);
               onSpotClick(spot);
             });
             
@@ -93,7 +134,7 @@ export const useMarkers = (
       console.error("Error creating markers:", error);
       return () => {};
     }
-  }, [spots, isLoaded, isAdmin, onSpotClick, mapRef]); // Added mapRef as dependency
+  }, [spots, isLoaded, isAdmin, onSpotClick, mapRef]);
 
   return { markers: markersRef.current };
 };
