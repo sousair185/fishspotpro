@@ -38,29 +38,9 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   // Use our extracted hook for fetching spots data - modified to show approved spots to all users
   const { spots, setSpots } = useSpotsData(user, isAdmin, isLoaded, initialSpots);
 
-  // Create markers for spots
-  const { markers } = useMarkers(spots, mapRef, isLoaded, isAdmin, (spot) => {
-    setSelectedSpot(spot);
-  });
-
-  const handleSpotAdded = (newSpot: FishingSpot) => {
-    if (isAdmin || newSpot.status === 'approved') {
-      setSpots(prev => [...prev, newSpot]);
-    }
-    setAddingSpot(false);
-    setSelectedCoordinates(null);
-    queryClient.invalidateQueries({ queryKey: ['spots'] });
-    queryClient.invalidateQueries({ queryKey: ['popularSpots'] });
-    
-    // Show toast notification
-    toast({
-      title: "Spot adicionado",
-      description: isAdmin ? "O spot foi adicionado com sucesso." : "O spot foi enviado para aprovação."
-    });
-  };
-
   const initialCenter = useMemo(() => [mapCenter.lng, mapCenter.lat] as [number, number], [mapCenter.lng, mapCenter.lat]);
   
+  // Initialize Google Maps and get the mapRef first
   const {
     onLoad,
     handleMapClick,
@@ -95,6 +75,27 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
       setMapCenter(newCenter);
     }
   });
+
+  // Now use markers with the initialized mapRef
+  const { markers } = useMarkers(spots, mapRef, isLoaded, isAdmin, (spot) => {
+    setSelectedSpot(spot);
+  });
+
+  const handleSpotAdded = (newSpot: FishingSpot) => {
+    if (isAdmin || newSpot.status === 'approved') {
+      setSpots(prev => [...prev, newSpot]);
+    }
+    setAddingSpot(false);
+    setSelectedCoordinates(null);
+    queryClient.invalidateQueries({ queryKey: ['spots'] });
+    queryClient.invalidateQueries({ queryKey: ['popularSpots'] });
+    
+    // Show toast notification
+    toast({
+      title: "Spot adicionado",
+      description: isAdmin ? "O spot foi adicionado com sucesso." : "O spot foi enviado para aprovação."
+    });
+  };
 
   // Check URL parameters on component mount
   useEffect(() => {

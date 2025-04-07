@@ -178,9 +178,14 @@ export const useMapInteractions = ({
             lng: position.coords.longitude
           };
           
-          setUserLocation(newLocation);
-          saveUserLocation(newLocation);
-          updateUserMarker(newLocation);
+          // Only update if the location has actually changed
+          if (!userLocation || 
+              newLocation.lat !== userLocation.lat || 
+              newLocation.lng !== userLocation.lng) {
+            setUserLocation(newLocation);
+            saveUserLocation(newLocation);
+            updateUserMarker(newLocation);
+          }
         },
         (error) => {
           console.error("Erro no rastreamento de localização:", error);
