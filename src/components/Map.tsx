@@ -12,7 +12,7 @@ import { SpotFormContainer } from './map/SpotFormContainer';
 import { useSpotsData } from '@/hooks/useSpotsData';
 import { useMapInitialization } from '@/hooks/useMapInitialization';
 import { useSpotSelection } from '@/hooks/useSpotSelection';
-import { defaultMapOptions } from './map/MapOptions';
+import { getDefaultMapOptions, defaultMapOptions } from './map/MapOptions';
 
 const defaultCenter = { lat: -20.4206, lng: -49.9737 };
 const libraries: Libraries = ['places', 'geometry', 'marker'];
@@ -39,6 +39,11 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     googleMapsApiKey: 'AIzaSyA-_4LdTd5sQ4mzocyqwPmolfaFJXgawYg',
     libraries: libraries
   });
+
+  // Get map options only after Google Maps is loaded
+  const mapOptions = useMemo(() => {
+    return isLoaded ? getDefaultMapOptions() : defaultMapOptions;
+  }, [isLoaded]);
 
   // Use our extracted hook for fetching spots data
   const { spots, setSpots } = useSpotsData(user, isAdmin, isLoaded, initialSpots);
@@ -119,7 +124,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
         mapCenter={mapCenter}
         onLoad={onLoad}
         handleMapClick={handleMapClick}
-        mapOptions={defaultMapOptions}
+        mapOptions={mapOptions}
         selectedSpot={selectedSpot}
         isAdmin={isAdmin}
         onCloseInfoWindow={() => setSelectedSpot(null)}
