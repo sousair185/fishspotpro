@@ -44,7 +44,8 @@ export function MapControls({
           variant="default"
           size="icon"
           onClick={onLocationClick}
-          className="shadow-lg"
+          className="shadow-lg bg-primary hover:bg-primary/90"
+          title="Encontrar minha localização"
         >
           <Navigation className="h-4 w-4" />
         </Button>

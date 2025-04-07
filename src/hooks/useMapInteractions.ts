@@ -25,6 +25,7 @@ export const useMapInteractions = ({
   );
   const userMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const watchIdRef = useRef<number | null>(null);
+  const locationErrorsRef = useRef(0);
 
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     if (!isAddingMode || !onMapClick || !e.latLng) return;
@@ -98,107 +99,192 @@ export const useMapInteractions = ({
     }
   }, [mapRef]);
 
+  // Função melhorada para obter a localização do usuário
   const centerOnUserLocation = useCallback(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-
-          // Salva a localização do usuário e atualiza o estado
-          saveUserLocation(userLocation);
-          setUserLocation(userLocation);
-          
-          // Atualiza o marcador do usuário
-          updateUserMarker(userLocation);
-
-          if (mapRef.current) {
-            mapRef.current.panTo(userLocation);
-            mapRef.current.setZoom(14);
-            onCenterChanged?.(userLocation);
-
-            // Encontrar spots próximos (num raio de aproximadamente 20km)
-            const nearbySpots = spots.filter(spot => {
-              const spotLat = spot.coordinates[1];
-              const spotLng = spot.coordinates[0];
-              const distance = google.maps.geometry.spherical.computeDistanceBetween(
-                new google.maps.LatLng(userLocation.lat, userLocation.lng),
-                new google.maps.LatLng(spotLat, spotLng)
-              );
-              return distance <= 20000; // 20km em metros
-            });
-
-            // Notificar sobre os spots encontrados
-            if (nearbySpots.length > 0) {
-              toast({
-                title: "Spots encontrados!",
-                description: `${nearbySpots.length} spots de pesca num raio de 20km.`
-              });
-            } else {
-              toast({
-                title: "Nenhum spot próximo",
-                description: "Não encontramos spots de pesca num raio de 20km."
-              });
-            }
-          }
-        },
-        (error) => {
-          toast({
-            title: "Erro de localização",
-            description: "Não foi possível obter sua localização. Verifique as permissões do navegador.",
-            variant: "destructive"
-          });
-        }
-      );
-    } else {
+    if (!navigator.geolocation) {
       toast({
         title: "Geolocalização não suportada",
         description: "Seu navegador não suporta geolocalização.",
         variant: "destructive"
       });
+      return;
     }
+
+    // Mostrar feedback ao usuário
+    toast({
+      title: "Localizando",
+      description: "Buscando sua localização...",
+    });
+
+    // Limpar watch anterior se existir
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+
+    // Primeiro tentar obter uma leitura de alta precisão
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+
+        // Salva a localização do usuário e atualiza o estado
+        saveUserLocation(userLocation);
+        setUserLocation(userLocation);
+        
+        // Atualiza o marcador do usuário
+        updateUserMarker(userLocation);
+
+        if (mapRef.current) {
+          mapRef.current.panTo(userLocation);
+          mapRef.current.setZoom(14);
+          onCenterChanged?.(userLocation);
+
+          // Encontrar spots próximos (num raio de aproximadamente 20km)
+          const nearbySpots = spots.filter(spot => {
+            const spotLat = spot.coordinates[1];
+            const spotLng = spot.coordinates[0];
+            const distance = google.maps.geometry.spherical.computeDistanceBetween(
+              new google.maps.LatLng(userLocation.lat, userLocation.lng),
+              new google.maps.LatLng(spotLat, spotLng)
+            );
+            return distance <= 20000; // 20km em metros
+          });
+
+          // Notificar sobre os spots encontrados
+          if (nearbySpots.length > 0) {
+            toast({
+              title: "Spots encontrados!",
+              description: `${nearbySpots.length} spots de pesca num raio de 20km.`
+            });
+          } else {
+            toast({
+              title: "Nenhum spot próximo",
+              description: "Não encontramos spots de pesca num raio de 20km."
+            });
+          }
+        }
+
+        // Iniciar monitoramento contínuo de localização
+        startLocationWatching();
+      },
+      (error) => {
+        handleLocationError(error);
+      },
+      { 
+        enableHighAccuracy: true,
+        timeout: 15000,  // 15 segundos
+        maximumAge: 0    // Não usar cache
+      }
+    );
   }, [spots, toast, onCenterChanged, mapRef, updateUserMarker]);
+
+  // Função auxiliar para tratar erros de geolocalização
+  const handleLocationError = useCallback((error: GeolocationPositionError) => {
+    locationErrorsRef.current += 1;
+    
+    console.error("Erro de geolocalização:", error.code, error.message);
+    
+    let errorMessage = "Não foi possível obter sua localização. ";
+    
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        errorMessage += "Permissão de localização negada. Verifique as configurações do seu navegador.";
+        break;
+      case error.POSITION_UNAVAILABLE:
+        errorMessage += "Informação de localização indisponível.";
+        break;
+      case error.TIMEOUT:
+        errorMessage += "O tempo para obter sua localização expirou.";
+        break;
+      default:
+        errorMessage += "Erro desconhecido.";
+    }
+    
+    toast({
+      title: "Erro de localização",
+      description: errorMessage,
+      variant: "destructive"
+    });
+    
+    // Se for um erro de timeout, tente novamente com menos precisão
+    if (error.code === error.TIMEOUT && locationErrorsRef.current < 3) {
+      setTimeout(() => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            saveUserLocation(userLocation);
+            setUserLocation(userLocation);
+            updateUserMarker(userLocation);
+            centerOnCoordinates(userLocation);
+            locationErrorsRef.current = 0;
+          },
+          () => {},
+          { 
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 60000  // 1 minuto
+          }
+        );
+      }, 1000);
+    }
+  }, [centerOnCoordinates, toast, updateUserMarker]);
+
+  // Função para iniciar o monitoramento contínuo de localização
+  const startLocationWatching = useCallback(() => {
+    if (!navigator.geolocation || watchIdRef.current !== null) return;
+    
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const newLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
+        // Apenas atualiza se a localização mudou significativamente (> 10 metros)
+        if (!userLocation) {
+          setUserLocation(newLocation);
+          saveUserLocation(newLocation);
+          updateUserMarker(newLocation);
+        } else {
+          const distance = google.maps.geometry.spherical.computeDistanceBetween(
+            new google.maps.LatLng(userLocation.lat, userLocation.lng),
+            new google.maps.LatLng(newLocation.lat, newLocation.lng)
+          );
+          
+          if (distance > 10) { // 10 metros
+            setUserLocation(newLocation);
+            saveUserLocation(newLocation);
+            updateUserMarker(newLocation);
+          }
+        }
+      },
+      (error) => {
+        console.warn("Erro no monitoramento de localização:", error.message);
+        // Não mostra toast para erros de monitoramento para evitar spam
+      },
+      { 
+        enableHighAccuracy: true, 
+        maximumAge: 30000, // 30 segundos
+        timeout: 27000 // 27 segundos
+      }
+    );
+  }, [userLocation, updateUserMarker]);
 
   // Inicializa o rastreamento de localização do usuário
   useEffect(() => {
     // Verifica se já existe uma localização salva e atualiza o marcador
     const savedLocation = getSavedUserLocation();
-    if (savedLocation && mapRef.current) {
+    if (savedLocation && mapRef.current && window.google?.maps?.marker) {
       updateUserMarker(savedLocation);
     }
     
-    // Configura o observador da geolocalização contínua
-    if (navigator.geolocation && !watchIdRef.current) {
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (position) => {
-          const newLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          
-          // Only update if the location has actually changed
-          if (!userLocation || 
-              newLocation.lat !== userLocation.lat || 
-              newLocation.lng !== userLocation.lng) {
-            setUserLocation(newLocation);
-            saveUserLocation(newLocation);
-            updateUserMarker(newLocation);
-          }
-        },
-        (error) => {
-          console.error("Erro no rastreamento de localização:", error);
-        },
-        { 
-          enableHighAccuracy: true, 
-          maximumAge: 30000, // 30 segundos
-          timeout: 27000 // 27 segundos
-        }
-      );
-    }
-    
-    // Limpeza ao desmontar
+    // Limpa o rastreamento quando o componente é desmontado
     return () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
@@ -208,7 +294,7 @@ export const useMapInteractions = ({
         userMarkerRef.current.map = null;
       }
     };
-  }, [mapRef, updateUserMarker]); // Only depend on mapRef and updateUserMarker
+  }, [mapRef, updateUserMarker]);
 
   return {
     handleMapClick,
