@@ -4,7 +4,6 @@ import { useLoadScript, Libraries } from '@react-google-maps/api';
 import { FishingSpot, initialSpots } from '@/types/spot';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { db } from '@/lib/firebase';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMarkers } from '@/hooks/useMarkers';
@@ -36,8 +35,13 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     libraries: libraries
   });
 
-  // Use our extracted hook for fetching spots data
+  // Use our extracted hook for fetching spots data - modified to show approved spots to all users
   const { spots, setSpots } = useSpotsData(user, isAdmin, isLoaded, initialSpots);
+
+  // Create markers for spots
+  const { markers } = useMarkers(spots, mapRef, isLoaded, isAdmin, (spot) => {
+    setSelectedSpot(spot);
+  });
 
   const handleSpotAdded = (newSpot: FishingSpot) => {
     if (isAdmin || newSpot.status === 'approved') {
@@ -47,6 +51,12 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     setSelectedCoordinates(null);
     queryClient.invalidateQueries({ queryKey: ['spots'] });
     queryClient.invalidateQueries({ queryKey: ['popularSpots'] });
+    
+    // Show toast notification
+    toast({
+      title: "Spot adicionado",
+      description: isAdmin ? "O spot foi adicionado com sucesso." : "O spot foi enviado para aprovação."
+    });
   };
 
   const initialCenter = useMemo(() => [mapCenter.lng, mapCenter.lat] as [number, number], [mapCenter.lng, mapCenter.lat]);
@@ -68,15 +78,17 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
       setSelectedSpot(spot);
     },
     onMapClick: (coordinates) => {
-      if (!user) {
-        toast({
-          title: "Login necessário",
-          description: "Faça login para adicionar novos spots",
-          variant: "destructive"
-        });
-        return;
+      if (addingSpot) {
+        if (!user) {
+          toast({
+            title: "Login necessário",
+            description: "Faça login para adicionar novos spots",
+            variant: "destructive"
+          });
+          return;
+        }
+        setSelectedCoordinates(coordinates);
       }
-      setSelectedCoordinates(coordinates);
     },
     isAddingMode: addingSpot,
     onCenterChanged: (newCenter) => {
@@ -121,13 +133,35 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   if (loadError) return <div>Erro ao carregar o mapa. Tente novamente mais tarde.</div>;
   if (!isLoaded) return <div>Carregando mapa...</div>;
 
-  // Define the Google Maps options with stable values to prevent re-renders
+  // Define the Google Maps options with a cleaner style
   const mapOptions = {
     mapTypeId: 'roadmap',
     zoomControl: true,
-    streetViewControl: true,
+    streetViewControl: false, // Disable street view to keep UI cleaner
     mapTypeControl: true,
+    mapTypeControlOptions: {
+      style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+      position: google.maps.ControlPosition.TOP_RIGHT
+    },
     scaleControl: true,
+    fullscreenControl: false, // Disable fullscreen control to keep UI cleaner
+    styles: [
+      {
+        featureType: "poi",
+        elementType: "labels",
+        stylers: [{ visibility: "off" }]  // Turn off points of interest
+      },
+      {
+        featureType: "transit",
+        elementType: "labels",
+        stylers: [{ visibility: "off" }]  // Turn off transit labels
+      },
+      {
+        featureType: "landscape",
+        elementType: "geometry",
+        stylers: [{ color: "#f5f5f5" }]  // Lighten landscape
+      }
+    ],
     mapId: 'k9b3mrCq5TOP665GkQDj90RNOoc='
   };
 

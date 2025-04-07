@@ -1,5 +1,5 @@
 
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useToast } from './use-toast';
 import { getSavedUserLocation, saveUserLocation } from '@/utils/locationUtils';
 import { FishingSpot } from '@/types/spot';
@@ -20,8 +20,11 @@ export const useMapInteractions = ({
   spots
 }: UseMapInteractionsProps) => {
   const { toast } = useToast();
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [userMarker, setUserMarker] = useState<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(
+    getSavedUserLocation()
+  );
+  const userMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const watchIdRef = useRef<number | null>(null);
 
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     if (!isAddingMode || !onMapClick || !e.latLng) return;
@@ -67,8 +70,8 @@ export const useMapInteractions = ({
     if (!mapRef.current || !window.google?.maps?.marker) return;
     
     // Remove marcador existente se houver
-    if (userMarker) {
-      userMarker.map = null;
+    if (userMarkerRef.current) {
+      userMarkerRef.current.map = null;
     }
 
     try {
@@ -89,11 +92,11 @@ export const useMapInteractions = ({
         title: "Sua localização"
       });
 
-      setUserMarker(marker);
+      userMarkerRef.current = marker;
     } catch (error) {
       console.error("Erro ao criar marcador do usuário:", error);
     }
-  }, [mapRef, userMarker]);
+  }, [mapRef]);
 
   const centerOnUserLocation = useCallback(() => {
     if (navigator.geolocation) {
@@ -160,20 +163,15 @@ export const useMapInteractions = ({
 
   // Inicializa o rastreamento de localização do usuário
   useEffect(() => {
-    // Verifica se já existe uma localização salva
+    // Verifica se já existe uma localização salva e atualiza o marcador
     const savedLocation = getSavedUserLocation();
-    if (savedLocation) {
-      setUserLocation(savedLocation);
-      if (mapRef.current) {
-        updateUserMarker(savedLocation);
-      }
+    if (savedLocation && mapRef.current) {
+      updateUserMarker(savedLocation);
     }
     
     // Configura o observador da geolocalização contínua
-    let watchId: number | null = null;
-    
-    if (navigator.geolocation) {
-      watchId = navigator.geolocation.watchPosition(
+    if (navigator.geolocation && !watchIdRef.current) {
+      watchIdRef.current = navigator.geolocation.watchPosition(
         (position) => {
           const newLocation = {
             lat: position.coords.latitude,
@@ -197,14 +195,15 @@ export const useMapInteractions = ({
     
     // Limpeza ao desmontar
     return () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
       }
-      if (userMarker) {
-        userMarker.map = null;
+      if (userMarkerRef.current) {
+        userMarkerRef.current.map = null;
       }
     };
-  }, [mapRef, updateUserMarker]);
+  }, [mapRef, updateUserMarker]); // Only depend on mapRef and updateUserMarker
 
   return {
     handleMapClick,

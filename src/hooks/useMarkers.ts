@@ -10,13 +10,12 @@ export const useMarkers = (
   isAdmin: boolean,
   onSpotClick: (spot: FishingSpot) => void
 ) => {
-  const [markers, setMarkers] = useState<google.maps.marker.AdvancedMarkerElement[]>([]);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   
   // Effect to create advanced markers when spots or map changes
   useEffect(() => {
     // Only proceed if Google Maps is loaded, map reference is available, and spots exist
-    if (!isLoaded || !mapRef.current || !spots.length) {
+    if (!isLoaded || !mapRef.current) {
       console.log('Markers not created: conditions not met', { 
         isLoaded, 
         mapExists: !!mapRef.current, 
@@ -37,9 +36,11 @@ export const useMarkers = (
         marker.map = null;
       }
     });
+    markersRef.current = [];
     
     try {
       console.log('Creating markers for spots:', spots.length);
+      
       // Create new markers for each spot
       const newMarkers = spots.map(spot => {
         try {
@@ -76,9 +77,8 @@ export const useMarkers = (
         }
       }).filter(Boolean) as google.maps.marker.AdvancedMarkerElement[];
       
-      // Update the ref first, then the state to avoid continuous re-renders
+      // Update the ref with the new markers
       markersRef.current = newMarkers;
-      setMarkers(newMarkers);
       console.log('Created markers:', newMarkers.length);
       
       // Cleanup function to remove markers when component unmounts
@@ -93,7 +93,7 @@ export const useMarkers = (
       console.error("Error creating markers:", error);
       return () => {};
     }
-  }, [spots, isLoaded, isAdmin, onSpotClick]); // Removed mapRef.current to prevent infinite renders
+  }, [spots, isLoaded, isAdmin, onSpotClick, mapRef]); // Added mapRef as dependency
 
   return { markers: markersRef.current };
 };
