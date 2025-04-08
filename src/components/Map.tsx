@@ -134,7 +134,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     <div className="relative w-full h-full rounded-2xl overflow-hidden">
       <MapContainer
         mapCenter={mapCenter}
-        onLoad={onLoad} {/* Now passing a function, not a ref */}
+        onLoad={onLoad} 
         handleMapClick={handleMapClick}
         mapOptions={mapOptions}
         selectedSpot={selectedSpot}

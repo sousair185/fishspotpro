@@ -1,7 +1,7 @@
 
 // Create a function that returns the map options when Google Maps is loaded
 export const getDefaultMapOptions = (): google.maps.MapOptions => {
-  if (typeof google === 'undefined') {
+  if (typeof window === 'undefined' || !window.google || !window.google.maps) {
     // Return basic options if Google Maps isn't loaded yet
     return {
       zoomControl: true,

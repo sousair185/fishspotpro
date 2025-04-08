@@ -83,7 +83,7 @@ export const useGoogleMaps = ({
   }, [onCenterChanged]);
 
   return {
-    onLoad: handleMapLoad, // This is a function, not a ref
+    onLoad: handleMapLoad,
     handleMapClick,
     mapRef,
     centerOnUserLocation,
