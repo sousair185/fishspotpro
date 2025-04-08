@@ -1,3 +1,4 @@
+
 import { useRef, useCallback } from 'react';
 import { FishingSpot } from '@/types/spot';
 import { useMapUrlParams } from './useMapUrlParams';
@@ -24,7 +25,7 @@ export const useGoogleMaps = ({
   onCenterChanged
 }: UseGoogleMapsProps) => {
   const mapRef = useRef<google.maps.Map | null>(null);
-  const onLoad = useRef<boolean>(false);
+  const isMapLoaded = useRef<boolean>(false);
 
   // Use the map interactions hook
   const {
@@ -51,7 +52,7 @@ export const useGoogleMaps = ({
   const handleMapLoad = useCallback((map: google.maps.Map) => {
     console.log("Map loaded");
     mapRef.current = map;
-    onLoad.current = true;
+    isMapLoaded.current = true;
     
     // Check if there are URL parameters for shared location first
     const urlParams = new URLSearchParams(window.location.search);
@@ -82,12 +83,12 @@ export const useGoogleMaps = ({
   }, [onCenterChanged]);
 
   return {
-    onLoad: handleMapLoad,
+    onLoad: handleMapLoad, // This is a function, not a ref
     handleMapClick,
     mapRef,
     centerOnUserLocation,
     centerOnCoordinates,
     userLocation,
-    onLoad
+    isMapLoaded
   };
 };

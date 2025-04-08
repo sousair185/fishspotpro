@@ -54,7 +54,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
   const { selectedSpot, setSelectedSpot } = useSpotSelection({
     selectedSpotFromList,
     centerOnCoordinates: (coords) => {
-      if (isLoaded && onLoad.current) {
+      if (isLoaded && isMapLoaded.current) {
         centerOnCoordinates(coords);
       }
     },
@@ -68,7 +68,8 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     mapRef,
     centerOnUserLocation,
     centerOnCoordinates,
-    userLocation
+    userLocation,
+    isMapLoaded
   } = useGoogleMaps({
     initialCenter,
     initialZoom: 12,
@@ -133,7 +134,7 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
     <div className="relative w-full h-full rounded-2xl overflow-hidden">
       <MapContainer
         mapCenter={mapCenter}
-        onLoad={onLoad}
+        onLoad={onLoad} {/* Now passing a function, not a ref */}
         handleMapClick={handleMapClick}
         mapOptions={mapOptions}
         selectedSpot={selectedSpot}
