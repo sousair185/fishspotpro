@@ -5,7 +5,10 @@ import { FishingSpot } from '@/types/spot';
 import { SpotLike } from './SpotLike';
 import { SpotShare } from './SpotShare';
 import { SpotBoost } from './SpotBoost';
-import { Rocket } from 'lucide-react';
+import { Rocket, ThumbsUp, Share2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface SpotInfoWindowProps {
   spot: FishingSpot;
@@ -16,15 +19,28 @@ interface SpotInfoWindowProps {
 
 export function SpotInfoWindow({ spot, isAdmin, onClose, onLikeUpdate }: SpotInfoWindowProps) {
   console.log("Rendering InfoWindow for spot:", spot.name);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const handleLikeUpdate = () => {
+    console.log("Like updated for spot:", spot.name);
+    queryClient.invalidateQueries({ queryKey: ['spots'] });
+    queryClient.invalidateQueries({ queryKey: ['popularSpots'] });
+    if (onLikeUpdate) {
+      onLikeUpdate();
+    }
+  };
   
   return (
     <InfoWindow
       position={{ lat: spot.coordinates[1], lng: spot.coordinates[0] }}
       onCloseClick={onClose}
+      options={{ maxWidth: 320 }}
     >
-      <div className="p-2">
-        <h3 className="font-bold">{spot.name}</h3>
-        <p className="text-sm">{spot.description}</p>
+      <div className="p-3 max-w-[300px]">
+        <h3 className="font-bold text-lg mb-1">{spot.name}</h3>
+        <p className="text-sm mb-2">{spot.description}</p>
         
         {spot.type === 'establishment' ? (
           <p className="text-xs mt-1">Categorias: {spot.species.join(', ')}</p>
@@ -52,7 +68,7 @@ export function SpotInfoWindow({ spot, isAdmin, onClose, onLikeUpdate }: SpotInf
         )}
 
         {spot.images && spot.images.length > 0 && (
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {spot.images.map((url, index) => (
               <img
                 key={index}
@@ -64,21 +80,23 @@ export function SpotInfoWindow({ spot, isAdmin, onClose, onLikeUpdate }: SpotInf
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-2">
             <SpotLike
               spotId={spot.id}
               likes={spot.likes || []}
               likeCount={spot.likeCount || 0}
-              onLikeUpdate={onLikeUpdate}
+              onLikeUpdate={handleLikeUpdate}
             />
             <SpotShare spot={spot} />
           </div>
-          <SpotBoost
-            spotId={spot.id}
-            boosted={spot.boosted}
-            onBoostUpdate={onLikeUpdate}
-          />
+          {user && (
+            <SpotBoost
+              spotId={spot.id}
+              boosted={spot.boosted}
+              onBoostUpdate={handleLikeUpdate}
+            />
+          )}
         </div>
       </div>
     </InfoWindow>

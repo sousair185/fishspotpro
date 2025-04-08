@@ -13,7 +13,7 @@ const mapContainerStyle = {
 
 interface MapContainerProps {
   mapCenter: { lat: number; lng: number };
-  onLoad: (map: google.maps.Map) => void; // This requires a function
+  onLoad: (map: google.maps.Map) => void;
   handleMapClick: (e: google.maps.MapMouseEvent) => void;
   mapOptions: google.maps.MapOptions;
   selectedSpot: FishingSpot | null;
@@ -40,7 +40,7 @@ export const MapContainer = memo(({
       mapContainerStyle={mapContainerStyle}
       zoom={12}
       center={mapCenter}
-      onLoad={onLoad} // This must be a function that accepts a map parameter
+      onLoad={onLoad}
       onClick={handleMapClick}
       options={mapOptions}
     >

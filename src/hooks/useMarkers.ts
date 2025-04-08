@@ -24,9 +24,8 @@ export const useMarkers = (
       return () => {};
     }
     
-    // Wait for Advanced Marker functionality to be available
-    if (!window.google?.maps?.marker) {
-      console.log('Advanced Marker not available yet, using fallback markers');
+    try {
+      console.log('Creating markers for spots:', spots.length);
       
       // Clean up any existing markers
       markersRef.current.forEach(marker => {
@@ -36,53 +35,44 @@ export const useMarkers = (
       });
       markersRef.current = [];
       
-      // Use regular markers as fallback when Advanced Markers are not available
-      const newMarkers = spots.map(spot => {
-        try {
-          if (window.google && google.maps && google.maps.Marker) {
+      // Wait for Advanced Marker functionality to be available
+      if (!window.google?.maps?.marker?.AdvancedMarkerElement) {
+        console.log('Advanced Marker not available yet, using fallback markers');
+        
+        // Use regular markers as fallback
+        const newMarkers = spots.map(spot => {
+          try {
             const marker = new google.maps.Marker({
               position: { lat: spot.coordinates[1], lng: spot.coordinates[0] },
               map: mapRef.current,
               title: spot.name
             });
             
+            // Use regular click event for standard markers
             marker.addListener("click", () => {
-              console.log('Regular marker clicked:', spot.name);
+              console.log('Standard marker clicked:', spot.name);
               onSpotClick(spot);
             });
             
             return marker as unknown as google.maps.marker.AdvancedMarkerElement;
+          } catch (error) {
+            console.error(`Error creating fallback marker for spot ${spot.name}:`, error);
+            return null;
           }
-          return null;
-        } catch (error) {
-          console.error(`Error creating fallback marker for spot ${spot.name}:`, error);
-          return null;
-        }
-      }).filter(Boolean) as google.maps.marker.AdvancedMarkerElement[];
+        }).filter(Boolean) as google.maps.marker.AdvancedMarkerElement[];
+        
+        markersRef.current = newMarkers;
+        
+        return () => {
+          newMarkers.forEach(marker => {
+            if (marker) {
+              marker.map = null;
+            }
+          });
+        };
+      }
       
-      markersRef.current = newMarkers;
-      
-      return () => {
-        newMarkers.forEach(marker => {
-          if (marker) {
-            marker.map = null;
-          }
-        });
-      };
-    }
-    
-    try {
-      console.log('Creating advanced markers for spots:', spots.length);
-      
-      // Clean up any existing markers
-      markersRef.current.forEach(marker => {
-        if (marker) {
-          marker.map = null;
-        }
-      });
-      markersRef.current = [];
-      
-      // Create new markers for each spot
+      // Create advanced markers if available
       const newMarkers = spots.map(spot => {
         try {
           const pinElement = createPinElement(spot, isAdmin);
@@ -92,26 +82,20 @@ export const useMarkers = (
             return null;
           }
           
-          // Make sure google.maps.marker.AdvancedMarkerElement is available
-          if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
-            const advancedMarker = new google.maps.marker.AdvancedMarkerElement({
-              position: { lat: spot.coordinates[1], lng: spot.coordinates[0] },
-              map: mapRef.current,
-              content: pinElement,
-              title: spot.name
-            });
-            
-            // Use 'gmp-click' event instead of 'click' for Advanced Markers
-            advancedMarker.addEventListener("gmp-click", () => {
-              console.log('Advanced marker clicked:', spot.name);
-              onSpotClick(spot);
-            });
-            
-            return advancedMarker;
-          } else {
-            console.error('AdvancedMarkerElement not available');
-            return null;
-          }
+          const advancedMarker = new google.maps.marker.AdvancedMarkerElement({
+            position: { lat: spot.coordinates[1], lng: spot.coordinates[0] },
+            map: mapRef.current,
+            content: pinElement,
+            title: spot.name
+          });
+          
+          // Use 'gmp-click' event for Advanced Markers
+          advancedMarker.addEventListener("gmp-click", () => {
+            console.log('Advanced marker clicked:', spot.name);
+            onSpotClick(spot);
+          });
+          
+          return advancedMarker;
         } catch (error) {
           console.error(`Error creating marker for spot ${spot.name}:`, error);
           return null;
@@ -122,7 +106,7 @@ export const useMarkers = (
       markersRef.current = newMarkers;
       console.log('Created markers:', newMarkers.length);
       
-      // Cleanup function to remove markers when component unmounts
+      // Cleanup function
       return () => {
         newMarkers.forEach(marker => {
           if (marker) {

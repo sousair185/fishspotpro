@@ -58,6 +58,7 @@ export const useGoogleMaps = ({
     const urlParams = new URLSearchParams(window.location.search);
     const lat = urlParams.get('lat');
     const lng = urlParams.get('lng');
+    const spotId = urlParams.get('spotId');
     
     if (lat && lng) {
       const sharedLocation = { 
@@ -67,6 +68,17 @@ export const useGoogleMaps = ({
       map.panTo(sharedLocation);
       map.setZoom(14);
       onCenterChanged?.(sharedLocation);
+      
+      // If spotId is provided, find and select the spot
+      if (spotId) {
+        const spot = spots.find(s => s.id === spotId);
+        if (spot && onSpotClick) {
+          console.log("Auto-selecting spot from URL:", spot.name);
+          setTimeout(() => {
+            onSpotClick(spot);
+          }, 500);
+        }
+      }
       
       // Clean URL parameters after processing
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -80,7 +92,7 @@ export const useGoogleMaps = ({
         onCenterChanged?.(savedLocation);
       }
     }
-  }, [onCenterChanged]);
+  }, [onCenterChanged, spots, onSpotClick]);
 
   return {
     onLoad: handleMapLoad,
