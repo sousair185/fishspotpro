@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Spots from "./pages/Spots";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
+import Social from "./pages/Social";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => {
               <Route path="/spots" element={<Spots />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/social" element={<Social />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

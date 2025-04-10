@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Map, Fish, UserCircle, Settings } from "lucide-react";
+import { Map, Fish, UserCircle, Settings, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
@@ -12,6 +12,7 @@ const Navbar = () => {
         <div className="flex justify-around items-center">
           <NavLink to="/" icon={<Map size={24} />} label="Mapa" />
           <NavLink to="/spots" icon={<Fish size={24} />} label="Pontos" />
+          <NavLink to="/social" icon={<Users size={24} />} label="Social" />
           {isAdmin && (
             <NavLink to="/admin" icon={<Settings size={24} />} label="Gerenciar" />
           )}
