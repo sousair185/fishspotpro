@@ -42,6 +42,9 @@ export function createPinElement(spot: FishingSpot, isAdmin: boolean) {
     
     // Extract SVG element from the div
     const svgElement = pinElement.firstElementChild as SVGElement;
+    if (svgElement) {
+      svgElement.style.cursor = 'pointer';
+    }
     
     return svgElement;
   } catch (error) {

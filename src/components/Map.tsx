@@ -89,6 +89,9 @@ const Map: React.FC<MapProps> = ({ selectedSpotFromList }) => {
           return;
         }
         setSelectedCoordinates(coordinates);
+      } else {
+        // Close info window when clicking on the map (not on a marker)
+        setSelectedSpot(null);
       }
     },
     isAddingMode: addingSpot,
