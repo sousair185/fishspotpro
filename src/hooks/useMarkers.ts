@@ -30,7 +30,12 @@ export const useMarkers = (
       // Clean up any existing markers
       markersRef.current.forEach(marker => {
         if (marker) {
-          marker.map = null;
+          // Handle different marker types
+          if (marker instanceof google.maps.marker.AdvancedMarkerElement) {
+            marker.map = null;
+          } else if (marker instanceof google.maps.Marker) {
+            marker.setMap(null);
+          }
         }
       });
       markersRef.current = [];
@@ -99,7 +104,12 @@ export const useMarkers = (
       return () => {
         newMarkers.forEach(marker => {
           if (marker) {
-            marker.map = null;
+            // Handle different marker types for cleanup
+            if (marker instanceof google.maps.marker.AdvancedMarkerElement) {
+              marker.map = null;
+            } else if (marker instanceof google.maps.Marker) {
+              marker.setMap(null);
+            }
           }
         });
       };
