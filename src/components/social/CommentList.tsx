@@ -62,7 +62,7 @@ const CommentList: React.FC<CommentListProps> = ({ comments, postId, loading }) 
               </div>
               
               {/* Botão de excluir (visível apenas para o autor do comentário ou admin) */}
-              {user && (user.uid === comment.userId || user.isAdmin) && (
+              {user && (user.uid === comment.userId || (user as any).isAdmin) && (
                 <Button 
                   variant="ghost" 
                   size="icon" 

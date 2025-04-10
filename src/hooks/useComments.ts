@@ -102,7 +102,8 @@ export const useComments = (postId: string) => {
       const commentData = commentDoc.data();
       
       // Permitir exclusão apenas para o autor do comentário ou admin
-      if (commentData.userId !== user.uid && !user.isAdmin) {
+      const isAdmin = (user as any).isAdmin;
+      if (commentData.userId !== user.uid && !isAdmin) {
         toast({
           title: 'Erro',
           description: 'Você não tem permissão para excluir este comentário',
