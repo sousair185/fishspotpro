@@ -45,7 +45,8 @@ export const useMarkers = (
             const marker = new google.maps.Marker({
               position: { lat: spot.coordinates[1], lng: spot.coordinates[0] },
               map: mapRef.current,
-              title: spot.name
+              title: spot.name,
+              cursor: 'pointer'  // Add explicit cursor style
             });
             
             // Use regular click event for standard markers
