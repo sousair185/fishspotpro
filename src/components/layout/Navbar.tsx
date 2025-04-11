@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Map, Fish, UserCircle, Settings, Users, MessageSquare, Search } from "lucide-react";
+import { Map, Fish, UserCircle, Settings, Users, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMessages } from "@/hooks/useMessages";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -9,10 +9,24 @@ import { Badge } from "@/components/ui/badge";
 const Navbar = () => {
   const { isAdmin } = useAuth();
   const { unreadCount } = useMessages();
-  const { notifications } = useNotifications();
+  const { notifications, markAsRead } = useNotifications();
   
-  // Filtrar notificações não lidas
+  // Filter unread notifications
   const unreadNotifications = notifications.filter(n => !n.read).length;
+  
+  // Handle tab click to reset notification counter
+  const handleNotificationTabClick = () => {
+    // Mark all notifications as read when clicking on the social tab
+    if (unreadNotifications > 0) {
+      notifications
+        .filter(n => !n.read)
+        .forEach(notification => {
+          if (notification.id !== 'moon-phase' && notification.id !== 'weather-data') {
+            markAsRead(notification.id);
+          }
+        });
+    }
+  };
   
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-lg border-t border-border/50 px-6 py-2 z-50">
@@ -25,17 +39,13 @@ const Navbar = () => {
             icon={<Users size={24} />} 
             label="Social" 
             notificationCount={unreadNotifications}
+            onClick={handleNotificationTabClick}
           />
           <NavLink 
             to="/messages" 
             icon={<MessageSquare size={24} />} 
             label="Mensagens" 
             notificationCount={unreadCount}
-          />
-          <NavLink 
-            to="/search" 
-            icon={<Search size={24} />} 
-            label="Buscar" 
           />
           {isAdmin && (
             <NavLink to="/admin" icon={<Settings size={24} />} label="Gerenciar" />
@@ -52,12 +62,14 @@ interface NavLinkProps {
   icon: React.ReactNode;
   label: string;
   notificationCount?: number;
+  onClick?: () => void;
 }
 
-const NavLink = ({ to, icon, label, notificationCount }: NavLinkProps) => (
+const NavLink = ({ to, icon, label, notificationCount, onClick }: NavLinkProps) => (
   <Link
     to={to}
     className="flex flex-col items-center gap-1 p-2 text-muted-foreground hover:text-primary transition-colors duration-200 relative"
+    onClick={onClick}
   >
     <div className="relative">
       {icon}
