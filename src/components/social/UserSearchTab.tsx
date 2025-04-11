@@ -4,13 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, UserPlus, MessageSquare, Eye } from 'lucide-react';
+import { Search, UserPlus, MessageSquare, Eye, Info } from 'lucide-react';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { useFollow } from '@/hooks/useFollow';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface UserSearchProps {
   onSelectUser?: (userId: string, userName: string | null, userPhotoURL: string | null) => void;
@@ -26,6 +27,7 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
+      console.log('Iniciando busca por:', searchTerm);
       searchUsers(searchTerm);
     }
   };
@@ -78,6 +80,13 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
           <Search className="h-4 w-4 mr-1" /> Buscar
         </Button>
       </form>
+      
+      <Alert variant="outline" className="mb-3">
+        <Info className="h-4 w-4 mr-1" />
+        <AlertDescription>
+          Busque pelo nome do usuário, email ou localização. Digite pelo menos 3 caracteres.
+        </AlertDescription>
+      </Alert>
       
       {loading ? (
         <div className="py-8 text-center">
@@ -142,6 +151,7 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
       ) : searchTerm && (
         <div className="py-8 text-center">
           <p className="text-muted-foreground">Nenhum usuário encontrado.</p>
+          <p className="text-sm mt-2">Tente outros termos de busca ou verifique se o usuário está registrado.</p>
         </div>
       )}
     </div>

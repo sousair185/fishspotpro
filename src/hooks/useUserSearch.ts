@@ -24,19 +24,18 @@ export const useUserSearch = () => {
       setLoading(true);
       const usersRef = collection(db, 'users');
       
-      // Criando uma pesquisa com OR para diversos campos
+      // The problem is here - we can't use OR with multiple field conditions like this
+      // Firestore doesn't support this type of complex query with OR
+      // Let's simplify the query and then filter results in memory
+      
       const lowerSearchTerm = searchTerm.toLowerCase();
+      
+      // Query by displayName (which is most likely to be used)
       const q = query(
         usersRef,
-        or(
-          where('displayName_lower', '>=', lowerSearchTerm),
-          where('displayName_lower', '<=', lowerSearchTerm + '\uf8ff'),
-          where('email_lower', '>=', lowerSearchTerm),
-          where('email_lower', '<=', lowerSearchTerm + '\uf8ff'),
-          where('location_lower', '>=', lowerSearchTerm),
-          where('location_lower', '<=', lowerSearchTerm + '\uf8ff')
-        ),
-        limit(maxResults)
+        where('displayName_lower', '>=', lowerSearchTerm),
+        where('displayName_lower', '<=', lowerSearchTerm + '\uf8ff'),
+        limit(50) // Get more results so we can filter them
       );
       
       const querySnapshot = await getDocs(q);
@@ -44,21 +43,72 @@ export const useUserSearch = () => {
       const foundUsers: UserProfile[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        foundUsers.push({
-          uid: doc.id,
-          displayName: data.displayName || null,
-          photoURL: data.photoURL || null,
-          email: data.email || null,
-          bio: data.bio || '',
-          location: data.location || '',
-          website: data.website || '',
-          followers: data.followers || 0,
-          following: data.following || 0,
-          posts: data.posts || 0
-        });
+        
+        // Only add if something matches - additional filter in memory
+        if (
+          (data.displayName?.toLowerCase().includes(lowerSearchTerm)) || 
+          (data.email?.toLowerCase().includes(lowerSearchTerm)) ||
+          (data.location?.toLowerCase().includes(lowerSearchTerm))
+        ) {
+          foundUsers.push({
+            uid: doc.id,
+            displayName: data.displayName || null,
+            photoURL: data.photoURL || null,
+            email: data.email || null,
+            bio: data.bio || '',
+            location: data.location || '',
+            website: data.website || '',
+            followers: data.followers || 0,
+            following: data.following || 0,
+            posts: data.posts || 0
+          });
+        }
       });
       
-      setUsers(foundUsers);
+      // Limit to the maximum number of results
+      setUsers(foundUsers.slice(0, maxResults));
+      
+      // Log for debugging
+      console.log(`Found ${foundUsers.length} users for search term: ${searchTerm}`);
+      
+      if (foundUsers.length === 0) {
+        // If no results with displayName, try a more general search
+        const generalQuery = query(
+          usersRef,
+          limit(100)
+        );
+        
+        const generalSnapshot = await getDocs(generalQuery);
+        const generalResults: UserProfile[] = [];
+        
+        generalSnapshot.forEach((doc) => {
+          const data = doc.data();
+          
+          // Check all fields for matches
+          if (
+            (data.displayName?.toLowerCase().includes(lowerSearchTerm)) || 
+            (data.email?.toLowerCase().includes(lowerSearchTerm)) ||
+            (data.location?.toLowerCase().includes(lowerSearchTerm))
+          ) {
+            generalResults.push({
+              uid: doc.id,
+              displayName: data.displayName || null,
+              photoURL: data.photoURL || null,
+              email: data.email || null,
+              bio: data.bio || '',
+              location: data.location || '',
+              website: data.website || '',
+              followers: data.followers || 0,
+              following: data.following || 0,
+              posts: data.posts || 0
+            });
+          }
+        });
+        
+        console.log(`Found ${generalResults.length} users in general search for: ${searchTerm}`);
+        setUsers(generalResults.slice(0, maxResults));
+      }
+      
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
       toast({
