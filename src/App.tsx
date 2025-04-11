@@ -14,6 +14,9 @@ import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Social from "./pages/Social";
 import NotFound from "./pages/NotFound";
+import Messages from "./pages/Messages";
+import Search from "./pages/Search";
+import UserProfile from "./pages/UserProfile";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +43,9 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/social" element={<Social />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/user/:userId" element={<UserProfile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

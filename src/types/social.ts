@@ -32,10 +32,24 @@ export interface UserProfile {
   uid: string;
   displayName: string | null;
   photoURL: string | null;
+  email?: string | null;
   bio?: string;
   location?: string;
   website?: string;
   followers: number;
   following: number;
   posts: number;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  senderName: string | null;
+  senderPhotoURL: string | null;
+  recipientId: string;
+  recipientName: string | null;
+  recipientPhotoURL: string | null;
+  content: string;
+  createdAt: string;
+  read: boolean;
 }
