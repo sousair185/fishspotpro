@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Edit, MapPin, Globe, Calendar } from 'lucide-react';
 import { UserProfile } from '@/types/social';
@@ -22,7 +21,6 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ profile, loading, onE
   const isCurrentUser = user && profile && user.uid === profile.uid;
   const isFollowingUser = profile ? isFollowing(profile.uid) : false;
   
-  // Renderizar esqueleto durante o carregamento
   if (loading) {
     return (
       <Card>
