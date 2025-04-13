@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -117,7 +116,7 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
                     {user && user.uid !== userProfile.uid && (
                       <>
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           onClick={() => handleFollow(userProfile.uid, userProfile.displayName)}
                         >
@@ -126,7 +125,7 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
                         </Button>
                         
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           onClick={() => handleMessage(userProfile.uid, userProfile.displayName, userProfile.photoURL)}
                         >
