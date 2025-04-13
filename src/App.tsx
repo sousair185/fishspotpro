@@ -17,10 +17,14 @@ import NotFound from "./pages/NotFound";
 import Messages from "./pages/Messages";
 import Search from "./pages/Search";
 import UserProfile from "./pages/UserProfile";
+import { ThemeToggle } from "./components/ui/theme-toggle";
+import { useIsMobile } from "./hooks/use-mobile";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log("Auth state changed:", user ? "User logged in" : "User logged out");
@@ -37,6 +41,11 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            {isMobile && (
+              <div className="fixed top-4 right-4 z-50">
+                <ThemeToggle />
+              </div>
+            )}
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/spots" element={<Spots />} />

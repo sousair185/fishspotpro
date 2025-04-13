@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UserSearchProps {
   onSelectUser?: (userId: string, userName: string | null, userPhotoURL: string | null) => void;
@@ -22,6 +24,7 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
   const { followUser, unfollowUser, isFollowing } = useFollow();
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +78,7 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="mr-2"
         />
-        <Button type="submit" disabled={!searchTerm.trim() || loading}>
+        <Button type="submit" disabled={!searchTerm.trim() || loading} className="app-button">
           <Search className="h-4 w-4 mr-1" /> Buscar
         </Button>
       </form>
@@ -96,8 +99,8 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
         <div className="space-y-3">
           {users.map(userProfile => (
             <Card key={userProfile.uid} className="hover:bg-accent/50 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
+              <CardContent className={`p-4 ${isMobile ? 'px-2 py-3' : ''}`}>
+                <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={userProfile.photoURL || undefined} />
@@ -112,22 +115,24 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className={`flex ${isMobile ? 'mt-3 justify-between' : 'items-center space-x-2'}`}>
                     {user && user.uid !== userProfile.uid && (
                       <>
                         <Button
                           variant="default"
                           size="sm"
                           onClick={() => handleFollow(userProfile.uid, userProfile.displayName)}
+                          className="app-button"
                         >
                           <UserPlus className="h-4 w-4 mr-1" />
-                          {isFollowing(userProfile.uid) ? 'Deixar de Seguir' : 'Seguir'}
+                          {isFollowing(userProfile.uid) ? 'Deixar' : 'Seguir'}
                         </Button>
                         
                         <Button
                           variant="default"
                           size="sm"
                           onClick={() => handleMessage(userProfile.uid, userProfile.displayName, userProfile.photoURL)}
+                          className="app-button"
                         >
                           <MessageSquare className="h-4 w-4 mr-1" />
                           Mensagem
@@ -136,9 +141,9 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
                     )}
                     
                     <Link to={`/user/${userProfile.uid}`}>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="app-button">
                         <Eye className="h-4 w-4 mr-1" />
-                        Ver Perfil
+                        {isMobile ? '' : 'Ver Perfil'}
                       </Button>
                     </Link>
                   </div>
