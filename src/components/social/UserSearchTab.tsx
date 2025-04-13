@@ -83,7 +83,7 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
         </Button>
       </form>
       
-      <Alert variant="outline" className="mb-3">
+      <Alert className="mb-3">
         <Info className="h-4 w-4 mr-1" />
         <AlertDescription>
           Busque pelo nome do usuário, email ou localização. Digite pelo menos 3 caracteres.
