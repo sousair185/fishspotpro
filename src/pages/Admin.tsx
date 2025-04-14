@@ -259,7 +259,7 @@ const Admin = () => {
         </header>
 
         <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
             <TabsTrigger value="pending" className="relative">
               Spots Pendentes
               {pendingSpots && pendingSpots.length > 0 && (
@@ -273,7 +273,7 @@ const Admin = () => {
             <TabsTrigger value="notifications">
               <span className="flex items-center gap-1">
                 <Bell className="h-4 w-4" />
-                Notificações
+                Notif.
               </span>
             </TabsTrigger>
             <TabsTrigger value="boosts">

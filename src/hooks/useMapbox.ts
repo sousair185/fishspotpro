@@ -17,7 +17,7 @@ export const useMapbox = () => {
   // Substitua com a implementação real quando o pacote mapbox-gl estiver instalado
   
   useEffect(() => {
-    console.warn('useMapbox hook requires mapbox-gl package');
+    // Hook necessário para integração futura
   }, []);
 
   return {

@@ -63,11 +63,17 @@ const Social = () => {
   
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Entre para ver as postagens</h1>
-          <p className="mb-6">Faça login para acessar o feed social.</p>
+      <div className="min-h-screen bg-background pb-20">
+        <div className="container max-w-3xl mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold mb-6">Feed Social</h1>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold mb-4">Entre para ver as postagens</h1>
+              <p className="mb-6">Faça login para acessar o feed social.</p>
+            </div>
+          </div>
         </div>
+        <Navbar />
       </div>
     );
   }
