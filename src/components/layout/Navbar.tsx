@@ -86,12 +86,14 @@ const NavLink = ({ to, icon, label, notificationCount, onClick }: NavLinkProps) 
     <div className="relative">
       {icon}
       {notificationCount && notificationCount > 0 && (
-        <Badge 
-          variant="destructive" 
-          className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[9px] font-bold"
-        >
-          {notificationCount > 9 ? '9+' : notificationCount}
-        </Badge>
+        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center">
+          <span className="absolute inline-flex h-3 w-3 rounded-full bg-destructive"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive">
+            {notificationCount > 9 && (
+              <span className="text-[8px] font-bold text-white">+</span>
+            )}
+          </span>
+        </span>
       )}
     </div>
     <span className="text-[10px] font-medium">{label}</span>
