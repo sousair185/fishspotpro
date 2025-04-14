@@ -35,30 +35,30 @@ const Navbar = () => {
     <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-lg border-t border-border/50 px-3 py-2 z-50 dark:bg-card/50 dark:border-border/30 glass-dark glass-light">
       <div className="max-w-screen-xl mx-auto">
         <div className="flex justify-around items-center">
-          <NavLink to="/" icon={<Map size={22} />} label="Mapa" />
-          <NavLink to="/spots" icon={<Fish size={22} />} label="Pontos" />
+          <NavLink to="/" icon={<Map size={22} className="text-blue-500" />} label="Mapa" />
+          <NavLink to="/spots" icon={<Fish size={22} className="text-emerald-500" />} label="Pontos" />
           <NavLink 
             to="/social" 
-            icon={<Users size={22} />} 
+            icon={<Users size={22} className="text-violet-500" />} 
             label="Social" 
             notificationCount={unreadNotifications}
             onClick={handleNotificationTabClick}
           />
           <NavLink 
             to="/messages" 
-            icon={<MessageSquare size={22} />} 
+            icon={<MessageSquare size={22} className="text-amber-500" />} 
             label="Mensagens" 
             notificationCount={unreadCount}
           />
           <NavLink 
             to="/search" 
-            icon={<Search size={22} />} 
+            icon={<Search size={22} className="text-cyan-500" />} 
             label="Buscar" 
           />
           {isAdmin && (
-            <NavLink to="/admin" icon={<Settings size={22} />} label="Admin" />
+            <NavLink to="/admin" icon={<Settings size={22} className="text-rose-500" />} label="Admin" />
           )}
-          <NavLink to="/profile" icon={<UserCircle size={22} />} label="Perfil" />
+          <NavLink to="/profile" icon={<UserCircle size={22} className="text-indigo-500" />} label="Perfil" />
           
           {!isMobile && <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
             <ThemeToggle />
@@ -88,7 +88,7 @@ const NavLink = ({ to, icon, label, notificationCount, onClick }: NavLinkProps) 
       {notificationCount && notificationCount > 0 && (
         <Badge 
           variant="destructive" 
-          className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-[10px] animate-pulse"
+          className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-[10px] pulse-badge"
         >
           {notificationCount > 9 ? '9+' : notificationCount}
         </Badge>

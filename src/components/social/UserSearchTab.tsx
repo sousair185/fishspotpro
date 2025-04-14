@@ -69,22 +69,22 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
   
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Buscar Usuários</h2>
+      <h2 className="text-xl font-semibold text-gradient">Buscar Usuários</h2>
       
       <form onSubmit={handleSearch} className="flex mb-4">
         <Input
           placeholder="Buscar por nome, email ou localização..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="mr-2"
+          className="mr-2 border-accent/20 focus:border-accent"
         />
-        <Button type="submit" disabled={!searchTerm.trim() || loading} className="app-button">
+        <Button type="submit" disabled={!searchTerm.trim() || loading} className="app-button bg-gradient-to-r from-primary to-accent text-white">
           <Search className="h-4 w-4 mr-1" /> Buscar
         </Button>
       </form>
       
-      <Alert className="mb-3">
-        <Info className="h-4 w-4 mr-1" />
+      <Alert className="mb-3 border-accent/30 bg-accent/10">
+        <Info className="h-4 w-4 mr-1 text-accent" />
         <AlertDescription>
           Busque pelo nome do usuário, email ou localização. Digite pelo menos 3 caracteres.
         </AlertDescription>
@@ -98,19 +98,22 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
       ) : users.length > 0 ? (
         <div className="space-y-3">
           {users.map(userProfile => (
-            <Card key={userProfile.uid} className="hover:bg-accent/50 transition-colors">
+            <Card key={userProfile.uid} className="hover:bg-accent/5 transition-colors card-hover">
               <CardContent className={`p-4 ${isMobile ? 'px-2 py-3' : ''}`}>
                 <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
                   <div className="flex items-center space-x-3">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-10 w-10 border-2 border-accent/20">
                       <AvatarImage src={userProfile.photoURL || undefined} />
-                      <AvatarFallback>{userProfile.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20">{userProfile.displayName?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     
                     <div>
                       <p className="font-medium">{userProfile.displayName || 'Usuário'}</p>
                       {userProfile.location && (
-                        <p className="text-xs text-muted-foreground">{userProfile.location}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                          {userProfile.location}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -122,9 +125,9 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
                           variant="default"
                           size="sm"
                           onClick={() => handleFollow(userProfile.uid, userProfile.displayName)}
-                          className="app-button"
+                          className="app-button bg-gradient-to-r from-primary to-primary/80"
                         >
-                          <UserPlus className="h-4 w-4 mr-1" />
+                          <UserPlus className="h-4 w-4 mr-1 text-white" />
                           {isFollowing(userProfile.uid) ? 'Deixar' : 'Seguir'}
                         </Button>
                         
@@ -132,17 +135,17 @@ const UserSearchTab: React.FC<UserSearchProps> = ({ onSelectUser }) => {
                           variant="default"
                           size="sm"
                           onClick={() => handleMessage(userProfile.uid, userProfile.displayName, userProfile.photoURL)}
-                          className="app-button"
+                          className="app-button bg-gradient-to-r from-accent to-accent/80"
                         >
-                          <MessageSquare className="h-4 w-4 mr-1" />
+                          <MessageSquare className="h-4 w-4 mr-1 text-white" />
                           Mensagem
                         </Button>
                       </>
                     )}
                     
                     <Link to={`/user/${userProfile.uid}`}>
-                      <Button variant="ghost" size="sm" className="app-button">
-                        <Eye className="h-4 w-4 mr-1" />
+                      <Button variant="ghost" size="sm" className="app-button hover:bg-secondary/20">
+                        <Eye className="h-4 w-4 mr-1 text-secondary" />
                         {isMobile ? '' : 'Ver Perfil'}
                       </Button>
                     </Link>
