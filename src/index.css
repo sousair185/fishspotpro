@@ -123,7 +123,7 @@
   @apply text-accent;
 }
 
-/* Notification badge effect */
+/* Notification badge effect - simplified for better alignment */
 .pulse-badge {
-  @apply relative after:absolute after:inset-0 after:rounded-full after:bg-destructive after:animate-ping after:opacity-75;
+  @apply relative;
 }

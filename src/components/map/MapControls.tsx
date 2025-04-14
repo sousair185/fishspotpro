@@ -50,14 +50,6 @@ export function MapControls({
           <Navigation className="h-4 w-4" />
         </Button>
       </div>
-
-      {userLocation && (
-        <div className="absolute bottom-16 left-4 z-10 bg-background/80 p-2 rounded-md shadow text-xs">
-          <p>Sua localização atual:</p>
-          <p>Lat: {userLocation.lat.toFixed(6)}</p>
-          <p>Lng: {userLocation.lng.toFixed(6)}</p>
-        </div>
-      )}
     </>
   );
 }

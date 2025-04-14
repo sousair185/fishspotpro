@@ -88,7 +88,7 @@ const NavLink = ({ to, icon, label, notificationCount, onClick }: NavLinkProps) 
       {notificationCount && notificationCount > 0 && (
         <Badge 
           variant="destructive" 
-          className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-[10px] pulse-badge"
+          className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[9px] font-bold"
         >
           {notificationCount > 9 ? '9+' : notificationCount}
         </Badge>

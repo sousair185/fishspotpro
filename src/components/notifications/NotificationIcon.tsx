@@ -13,6 +13,6 @@ export const NotificationIcon = ({ type }: NotificationIconProps) => {
   } else if (type === 'weather') {
     return <Thermometer className="h-5 w-5 text-orange-400" />;
   } else {
-    return <Bell className="h-5 w-5 text-primary animate-wave" />;
+    return <Bell className="h-5 w-5 text-primary animate-pulse" />;
   }
 };
