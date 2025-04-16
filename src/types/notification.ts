@@ -9,6 +9,7 @@ export interface Notification {
   type: 'system' | 'admin' | 'moon' | 'weather' | 'message'; // Type of notification
   priority: 'high' | 'medium' | 'low'; // Display priority
   read?: boolean; // If the user has read this notification
+  targetId?: string; // Optional target ID (e.g., message ID) for navigating to specific content
 }
 
 export interface WeatherData {

@@ -19,6 +19,12 @@ export const NotificationContent = ({
     return null;
   }
   
+  // Determina se a notificação tem uma aba correspondente para navegar
+  const hasNavigationDestination = 
+    notification.type === 'admin' || 
+    notification.type === 'message' || 
+    notification.type === 'system';
+  
   return (
     <div className="mt-2 text-sm pb-2">
       <p>{notification.message}</p>
@@ -28,17 +34,19 @@ export const NotificationContent = ({
         </p>
       )}
       
-      <div className="mt-3">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onAction}
-          className="flex items-center gap-1"
-        >
-          <ExternalLink size={14} />
-          <span>Abrir</span>
-        </Button>
-      </div>
+      {hasNavigationDestination && (
+        <div className="mt-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onAction}
+            className="flex items-center gap-1"
+          >
+            <ExternalLink size={14} />
+            <span>Abrir</span>
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

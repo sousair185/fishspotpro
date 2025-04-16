@@ -2,13 +2,11 @@
 import { Link } from "react-router-dom";
 import { Map, Fish, UserCircle, Settings, Users, MessageSquare, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useMessages } from "@/hooks/useMessages";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const Navbar = () => {
   const { isAdmin } = useAuth();
-  const { unreadCount } = useMessages();
   const isMobile = useIsMobile();
   
   return (
@@ -26,7 +24,6 @@ const Navbar = () => {
             to="/messages" 
             icon={<MessageSquare size={22} className="text-amber-500" />} 
             label="Mensagens" 
-            notificationCount={unreadCount}
           />
           <NavLink 
             to="/search" 
