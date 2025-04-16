@@ -32,6 +32,13 @@ export const NotificationBanner = () => {
   }
   
   const handleNotificationClick = () => {
+    // Only expand the notification to show details, don't navigate yet
+    if (!isExpanded) {
+      handleToggleExpand();
+    }
+  };
+  
+  const handleActionClick = () => {
     if (!currentNotification) return;
     
     // Mark the notification as read
@@ -54,6 +61,10 @@ export const NotificationBanner = () => {
       case 'weather':
         // Weather notifications also relate to fishing conditions
         navigate('/');
+        break;
+      case 'message':
+        // Message notifications lead to the messages page
+        navigate('/messages');
         break;
       default:
         // Default behavior is to close the banner
@@ -132,7 +143,7 @@ export const NotificationBanner = () => {
           <NotificationContent 
             notification={currentNotification}
             isExpanded={isExpanded}
-            onAction={handleNotificationClick}
+            onAction={handleActionClick}
           />
         </div>
       </div>
