@@ -1,15 +1,19 @@
 
 import React from 'react';
 import { Notification } from '@/types/notification';
+import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
 
 interface NotificationContentProps {
   notification: Notification;
   isExpanded: boolean;
+  onAction?: () => void;
 }
 
 export const NotificationContent = ({
   notification,
-  isExpanded
+  isExpanded,
+  onAction
 }: NotificationContentProps) => {
   if (!isExpanded) {
     return null;
@@ -23,6 +27,18 @@ export const NotificationContent = ({
           Expira em: {new Date(notification.expiresAt).toLocaleDateString()}
         </p>
       )}
+      
+      <div className="mt-3">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onAction}
+          className="flex items-center gap-1"
+        >
+          <ExternalLink size={14} />
+          <span>Abrir</span>
+        </Button>
+      </div>
     </div>
   );
 };

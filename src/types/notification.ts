@@ -6,7 +6,7 @@ export interface Notification {
   createdAt: string;
   createdBy: string;
   expiresAt: string; // When this notification will no longer be displayed
-  type: 'system' | 'admin' | 'moon' | 'weather'; // Type of notification
+  type: 'system' | 'admin' | 'moon' | 'weather' | 'message'; // Type of notification
   priority: 'high' | 'medium' | 'low'; // Display priority
   read?: boolean; // If the user has read this notification
 }

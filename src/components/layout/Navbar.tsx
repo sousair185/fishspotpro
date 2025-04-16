@@ -3,33 +3,13 @@ import { Link } from "react-router-dom";
 import { Map, Fish, UserCircle, Settings, Users, MessageSquare, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMessages } from "@/hooks/useMessages";
-import { useNotifications } from "@/hooks/useNotifications";
-import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Navbar = () => {
   const { isAdmin } = useAuth();
   const { unreadCount } = useMessages();
-  const { notifications, markAsRead } = useNotifications();
   const isMobile = useIsMobile();
-  
-  // Filter unread notifications
-  const unreadNotifications = notifications.filter(n => !n.read).length;
-  
-  // Handle tab click to reset notification counter
-  const handleNotificationTabClick = () => {
-    // Mark all notifications as read when clicking on the social tab
-    if (unreadNotifications > 0) {
-      notifications
-        .filter(n => !n.read)
-        .forEach(notification => {
-          if (notification.id !== 'moon-phase' && notification.id !== 'weather-data') {
-            markAsRead(notification.id);
-          }
-        });
-    }
-  };
   
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-lg border-t border-border/50 px-3 py-2 z-50 dark:bg-card/50 dark:border-border/30 glass-dark glass-light">
@@ -41,8 +21,6 @@ const Navbar = () => {
             to="/social" 
             icon={<Users size={22} className="text-violet-500" />} 
             label="Social" 
-            notificationCount={unreadNotifications}
-            onClick={handleNotificationTabClick}
           />
           <NavLink 
             to="/messages" 

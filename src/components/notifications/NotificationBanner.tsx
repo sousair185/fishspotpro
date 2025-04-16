@@ -6,8 +6,11 @@ import { NotificationIcon } from './NotificationIcon';
 import { NotificationControls } from './NotificationControls';
 import { NotificationActions } from './NotificationActions';
 import { NotificationContent } from './NotificationContent';
+import { Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const NotificationBanner = () => {
+  const navigate = useNavigate();
   const {
     currentNotification,
     allNotifications,
@@ -27,6 +30,42 @@ export const NotificationBanner = () => {
   if (!currentNotification || !isVisible) {
     return null;
   }
+  
+  const handleNotificationClick = () => {
+    if (!currentNotification) return;
+    
+    // Mark the notification as read
+    handleMarkAsRead(currentNotification.id);
+    
+    // Navigate to the appropriate page based on notification type
+    switch (currentNotification.type) {
+      case 'system':
+        // For system notifications, we'll just close the banner
+        handleClose();
+        break;
+      case 'admin':
+        // Admin notifications typically relate to administrator tasks
+        navigate('/admin');
+        break;
+      case 'moon':
+        // Moon phase notifications relate to fishing conditions on the map
+        navigate('/');
+        break;
+      case 'weather':
+        // Weather notifications also relate to fishing conditions
+        navigate('/');
+        break;
+      default:
+        // Default behavior is to close the banner
+        handleClose();
+        break;
+    }
+    
+    // Close the banner after navigation
+    handleClose();
+  };
+  
+  const notificationCount = allNotifications.length;
   
   return (
     <>
@@ -48,31 +87,52 @@ export const NotificationBanner = () => {
       >
         <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 flex-1">
+            <div className="flex items-center space-x-2 flex-1 cursor-pointer" onClick={handleNotificationClick}>
               <NotificationIcon type={currentNotification.type} />
               
               <div className="text-sm font-medium truncate">
                 {currentNotification.title}
               </div>
-              
+            </div>
+            
+            <div className="flex items-center gap-2">
               <NotificationControls 
                 currentIndex={currentIndex}
                 totalNotifications={allNotifications.length}
                 onPrevious={handlePrevious}
                 onNext={handleNext}
               />
+              
+              <div className="relative">
+                <Bell 
+                  size={20} 
+                  className="text-primary cursor-pointer hover:text-primary/80 transition-colors" 
+                  onClick={handleToggleExpand}
+                />
+                {notificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center">
+                    <span className="absolute inline-flex h-3 w-3 rounded-full bg-destructive"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive">
+                      {notificationCount > 9 && (
+                        <span className="text-[8px] font-bold text-white">+</span>
+                      )}
+                    </span>
+                  </span>
+                )}
+              </div>
+              
+              <NotificationActions
+                isExpanded={isExpanded}
+                onToggleExpand={handleToggleExpand}
+                onClose={handleClose}
+              />
             </div>
-            
-            <NotificationActions
-              isExpanded={isExpanded}
-              onToggleExpand={handleToggleExpand}
-              onClose={handleClose}
-            />
           </div>
           
           <NotificationContent 
             notification={currentNotification}
             isExpanded={isExpanded}
+            onAction={handleNotificationClick}
           />
         </div>
       </div>
