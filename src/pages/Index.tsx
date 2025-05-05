@@ -32,7 +32,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary/30 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-secondary/30 to-background pt-16">
       {/* Notification Banner */}
       <NotificationBanner />
       
