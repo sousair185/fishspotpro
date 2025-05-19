@@ -29,12 +29,12 @@ export function ThemeToggle() {
       variant="ghost" 
       size="icon" 
       onClick={toggleTheme}
-      className="app-button h-9 w-9 rounded-full bg-muted/50 hover:bg-accent/20"
+      className="app-button h-10 w-10 rounded-full bg-card border border-border/50 shadow-soft hover:bg-accent/10"
       aria-label="Toggle theme"
     >
       {theme === "light" ? 
-        <Moon className="h-[1.2rem] w-[1.2rem] text-indigo-600" /> : 
-        <Sun className="h-[1.2rem] w-[1.2rem] text-yellow-400" />
+        <Moon className="h-[1.2rem] w-[1.2rem] text-primary transition-all duration-300" /> : 
+        <Sun className="h-[1.2rem] w-[1.2rem] text-yellow-400 transition-all duration-300" />
       }
     </Button>
   );

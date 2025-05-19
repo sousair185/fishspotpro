@@ -113,6 +113,22 @@ export default {
           "100%": { backgroundPosition: "200% 0" }
         }
       },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Montserrat', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        'soft': '0 2px 10px rgba(0, 0, 0, 0.08)',
+        'card': '0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+        'elevation': '0 10px 40px -10px rgba(0, 0, 0, 0.1)',
+        'inner-glow': 'inset 0 2px 10px rgba(255, 255, 255, 0.15)',
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-subtle': 'linear-gradient(to right, rgb(249, 250, 251), rgb(240, 245, 255))',
+        'gradient-sunset': 'linear-gradient(to right, rgb(254, 240, 138), rgb(249, 115, 22))',
+        'gradient-ocean': 'linear-gradient(to right, rgb(56, 189, 248), rgb(59, 130, 246))',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
